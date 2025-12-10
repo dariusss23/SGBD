@@ -3,12 +3,14 @@ DROP TABLE ECHIPA_SPONSOR_F1;
 DROP TABLE BILET_F1;
 DROP TABLE CURSA_F1;
 DROP TABLE VEHICUL_F1;
+DROP TABLE ISTORIC_ECHIPA_PILOT;
 DROP TABLE PILOT_F1;
 DROP TABLE ECHIPA_F1;
 DROP TABLE TIP_BILET_F1;
 DROP TABLE CIRCUIT_F1;
 DROP TABLE MODEL_VEHICUL_F1;
 DROP TABLE SPONSOR_F1;
+
 
 
 DROP SEQUENCE tip_bilet_seq;
@@ -22,7 +24,7 @@ CREATE SEQUENCE tip_bilet_seq START WITH 1 INCREMENT BY 1;
 CREATE SEQUENCE pilot_seq START WITH 1 INCREMENT BY 1;
 CREATE SEQUENCE echipa_seq START WITH 1 INCREMENT BY 1;
 CREATE SEQUENCE circuit_seq START WITH 1 INCREMENT BY 1;
-CREATE SEQUENCE contract_seq START WITH 1 INCREMENT BY 1;
+CREATE SEQUENCE contract_seq START WITH 101 INCREMENT BY 1;
 
 
 -- 1. SPONSOR_F1 (Standard)
@@ -130,6 +132,7 @@ CREATE TABLE ECHIPA_SPONSOR_F1 (
     id_sponsor INT,
     PRIMARY KEY (id_echipa, id_sponsor),
     contributie_financiara DECIMAL(15, 2),
+    status_activ CHAR(3),
     
     FOREIGN KEY (id_echipa) REFERENCES ECHIPA_F1(id_echipa),
     FOREIGN KEY (id_sponsor) REFERENCES SPONSOR_F1(id_sponsor)
@@ -238,7 +241,7 @@ select * from echipa_f1;
 
 
 -- DONE ✅ 
-INSERT INTO PILOT_F1 VALUES (pilot_seq.NEXTVAL, 'Verstappen', 'Max', TO_DATE('1997-09-30', 'YYYY-MM-DD'), 'NED', 2500, 3);
+INSERT INTO PILOT_F1 VALUES (pilot_seq.NEXTVAL, 'Verstappen', 'Max', TO_DATE('1990-01-26', 'YYYY-MM-DD'), 'NED', 2500, 3);
 INSERT INTO PILOT_F1 VALUES (pilot_seq.NEXTVAL, 'Perez', 'Sergio', TO_DATE('1990-01-26', 'YYYY-MM-DD'), 'MEX', 1500, 0);
 INSERT INTO PILOT_F1 VALUES (pilot_seq.NEXTVAL, 'Leclerc', 'Charles', TO_DATE('1997-10-16', 'YYYY-MM-DD'), 'MON', 1100, 0);
 INSERT INTO PILOT_F1 VALUES (pilot_seq.NEXTVAL, 'Sainz', 'Carlos', TO_DATE('1994-09-01', 'YYYY-MM-DD'), 'ESP', 1000, 0);
@@ -263,99 +266,160 @@ select * from pilot_f1;
 
 
 -- DONE ✅ 
-INSERT INTO ISTORIC_ECHIPA_PILOT VALUES (101, 1, 1, TO_DATE('2016-05-15', 'YYYY-MM-DD'), TO_DATE('2028-12-31', 'YYYY-MM-DD'), 55000000);
-INSERT INTO ISTORIC_ECHIPA_PILOT VALUES (102, 1, 2, TO_DATE('2021-01-01', 'YYYY-MM-DD'), TO_DATE('2024-12-31', 'YYYY-MM-DD'), 10000000);
-INSERT INTO ISTORIC_ECHIPA_PILOT VALUES (105, 2, 5, TO_DATE('2013-01-01', 'YYYY-MM-DD'), TO_DATE('2024-12-31', 'YYYY-MM-DD'), 45000000);
-INSERT INTO ISTORIC_ECHIPA_PILOT VALUES (106, 2, 6, TO_DATE('2022-01-01', 'YYYY-MM-DD'), TO_DATE('2025-12-31', 'YYYY-MM-DD'), 8000000);
-INSERT INTO ISTORIC_ECHIPA_PILOT VALUES (103, 3, 3, TO_DATE('2019-01-01', 'YYYY-MM-DD'), TO_DATE('2026-12-31', 'YYYY-MM-DD'), 24000000);
-INSERT INTO ISTORIC_ECHIPA_PILOT VALUES (104, 3, 4, TO_DATE('2021-01-01', 'YYYY-MM-DD'), TO_DATE('2024-12-31', 'YYYY-MM-DD'), 12000000);
-INSERT INTO ISTORIC_ECHIPA_PILOT VALUES (107, 4, 7, TO_DATE('2019-01-01', 'YYYY-MM-DD'), TO_DATE('2026-12-31', 'YYYY-MM-DD'), 20000000);
-INSERT INTO ISTORIC_ECHIPA_PILOT VALUES (108, 4, 8, TO_DATE('2023-01-01', 'YYYY-MM-DD'), TO_DATE('2026-12-31', 'YYYY-MM-DD'), 6000000);
-INSERT INTO ISTORIC_ECHIPA_PILOT VALUES (109, 5, 9, TO_DATE('2023-01-01', 'YYYY-MM-DD'), TO_DATE('2024-12-31', 'YYYY-MM-DD'), 18000000);
-INSERT INTO ISTORIC_ECHIPA_PILOT VALUES (110, 5, 10, TO_DATE('2019-01-01', 'YYYY-MM-DD'), TO_DATE('2026-12-31', 'YYYY-MM-DD'), 2000000);
-INSERT INTO ISTORIC_ECHIPA_PILOT VALUES (111, 6, 11, TO_DATE('2023-01-01', 'YYYY-MM-DD'), TO_DATE('2025-12-31', 'YYYY-MM-DD'), 5000000);
-INSERT INTO ISTORIC_ECHIPA_PILOT VALUES (112, 6, 12, TO_DATE('2020-01-01', 'YYYY-MM-DD'), TO_DATE('2024-12-31', 'YYYY-MM-DD'), 6000000);
-INSERT INTO ISTORIC_ECHIPA_PILOT VALUES (113, 7, 13, TO_DATE('2022-01-01', 'YYYY-MM-DD'), TO_DATE('2025-12-31', 'YYYY-MM-DD'), 3000000);
-INSERT INTO ISTORIC_ECHIPA_PILOT VALUES (114, 7, 14, TO_DATE('2023-01-01', 'YYYY-MM-DD'), TO_DATE('2024-12-31', 'YYYY-MM-DD'), 1000000);
-INSERT INTO ISTORIC_ECHIPA_PILOT VALUES (115, 8, 15, TO_DATE('2023-07-01', 'YYYY-MM-DD'), TO_DATE('2024-12-31', 'YYYY-MM-DD'), 7000000);
-INSERT INTO ISTORIC_ECHIPA_PILOT VALUES (116, 8, 16, TO_DATE('2021-01-01', 'YYYY-MM-DD'), TO_DATE('2024-12-31', 'YYYY-MM-DD'), 1000000);
-INSERT INTO ISTORIC_ECHIPA_PILOT VALUES (117, 9, 17, TO_DATE('2022-01-01', 'YYYY-MM-DD'), TO_DATE('2024-12-31', 'YYYY-MM-DD'), 10000000);
-INSERT INTO ISTORIC_ECHIPA_PILOT VALUES (118, 9, 18, TO_DATE('2022-01-01', 'YYYY-MM-DD'), TO_DATE('2024-12-31', 'YYYY-MM-DD'), 2000000);
-INSERT INTO ISTORIC_ECHIPA_PILOT VALUES (119, 10, 19, TO_DATE('2023-01-01', 'YYYY-MM-DD'), TO_DATE('2024-12-31', 'YYYY-MM-DD'), 4000000);
-INSERT INTO ISTORIC_ECHIPA_PILOT VALUES (120, 10, 20, TO_DATE('2022-03-01', 'YYYY-MM-DD'), TO_DATE('2024-12-31', 'YYYY-MM-DD'), 5000000);
+INSERT INTO ISTORIC_ECHIPA_PILOT VALUES (101, 1, 1,  TO_DATE('2025-01-01', 'YYYY-MM-DD'), TO_DATE('2029-01-01', 'YYYY-MM-DD'), 48200000);
+INSERT INTO ISTORIC_ECHIPA_PILOT VALUES (102, 1, 2,  TO_DATE('2025-01-04', 'YYYY-MM-DD'), TO_DATE('2029-01-04', 'YYYY-MM-DD'), 15700000);
+INSERT INTO ISTORIC_ECHIPA_PILOT VALUES (105, 2, 5,  TO_DATE('2025-01-08', 'YYYY-MM-DD'), TO_DATE('2028-01-08', 'YYYY-MM-DD'), 39100000);
+INSERT INTO ISTORIC_ECHIPA_PILOT VALUES (106, 2, 6,  TO_DATE('2025-01-11', 'YYYY-MM-DD'), TO_DATE('2029-01-11', 'YYYY-MM-DD'), 7200000);
+INSERT INTO ISTORIC_ECHIPA_PILOT VALUES (103, 3, 3,  TO_DATE('2025-01-15', 'YYYY-MM-DD'), TO_DATE('2029-01-15', 'YYYY-MM-DD'), 26400000);
+INSERT INTO ISTORIC_ECHIPA_PILOT VALUES (104, 3, 4,  TO_DATE('2025-01-18', 'YYYY-MM-DD'), TO_DATE('2028-01-18', 'YYYY-MM-DD'), 13200000);
+INSERT INTO ISTORIC_ECHIPA_PILOT VALUES (107, 4, 7,  TO_DATE('2025-01-22', 'YYYY-MM-DD'), TO_DATE('2028-01-22', 'YYYY-MM-DD'), 21800000);
+INSERT INTO ISTORIC_ECHIPA_PILOT VALUES (108, 4, 8,  TO_DATE('2025-01-25', 'YYYY-MM-DD'), TO_DATE('2029-01-25', 'YYYY-MM-DD'), 5800000);
+INSERT INTO ISTORIC_ECHIPA_PILOT VALUES (109, 5, 9,  TO_DATE('2025-01-29', 'YYYY-MM-DD'), TO_DATE('2029-01-29', 'YYYY-MM-DD'), 19400000);
+INSERT INTO ISTORIC_ECHIPA_PILOT VALUES (110, 5, 10, TO_DATE('2025-02-01', 'YYYY-MM-DD'), TO_DATE('2028-02-01', 'YYYY-MM-DD'), 3000000);
+INSERT INTO ISTORIC_ECHIPA_PILOT VALUES (111, 6, 11, TO_DATE('2025-02-05', 'YYYY-MM-DD'), TO_DATE('2029-02-05', 'YYYY-MM-DD'), 5300000);
+INSERT INTO ISTORIC_ECHIPA_PILOT VALUES (112, 6, 12, TO_DATE('2025-02-08', 'YYYY-MM-DD'), TO_DATE('2028-02-08', 'YYYY-MM-DD'), 7400000);
+INSERT INTO ISTORIC_ECHIPA_PILOT VALUES (113, 7, 13, TO_DATE('2025-02-12', 'YYYY-MM-DD'), TO_DATE('2028-02-12', 'YYYY-MM-DD'), 4200000);
+INSERT INTO ISTORIC_ECHIPA_PILOT VALUES (114, 7, 14, TO_DATE('2025-02-15', 'YYYY-MM-DD'), TO_DATE('2029-02-15', 'YYYY-MM-DD'), 1900000);
+INSERT INTO ISTORIC_ECHIPA_PILOT VALUES (115, 8, 15, TO_DATE('2025-02-19', 'YYYY-MM-DD'), TO_DATE('2028-02-19', 'YYYY-MM-DD'), 8600000);
+INSERT INTO ISTORIC_ECHIPA_PILOT VALUES (116, 8, 16, TO_DATE('2025-02-22', 'YYYY-MM-DD'), TO_DATE('2029-02-22', 'YYYY-MM-DD'), 2700000);
+INSERT INTO ISTORIC_ECHIPA_PILOT VALUES (117, 9, 17, TO_DATE('2025-02-26', 'YYYY-MM-DD'), TO_DATE('2028-02-26', 'YYYY-MM-DD'), 11800000);
+INSERT INTO ISTORIC_ECHIPA_PILOT VALUES (118, 9, 18, TO_DATE('2025-03-01', 'YYYY-MM-DD'), TO_DATE('2029-03-01', 'YYYY-MM-DD'), 3400000);
+INSERT INTO ISTORIC_ECHIPA_PILOT VALUES (119, 10, 19, TO_DATE('2025-03-05', 'YYYY-MM-DD'), TO_DATE('2028-03-05', 'YYYY-MM-DD'), 5600000);
+INSERT INTO ISTORIC_ECHIPA_PILOT VALUES (120, 10, 20, TO_DATE('2025-03-08', 'YYYY-MM-DD'), TO_DATE('2029-03-08', 'YYYY-MM-DD'), 9100000);
+
 
 select * from istoric_echipa_pilot;
 
 
 -- DONE ✅ 
-INSERT INTO VEHICUL_F1 (id_echipa, id_model, greutate, pneuri, pret, data_inspectie) VALUES (1, 1, 798, 'Pirelli', 15500000.00, TO_DATE('2024-03-01', 'YYYY-MM-DD'));
-INSERT INTO VEHICUL_F1 (id_echipa, id_model, greutate, pneuri, pret, data_inspectie) VALUES (2, 2, 798, 'Michelin', 15200000.00, TO_DATE('2024-05-15', 'YYYY-MM-DD'));
-INSERT INTO VEHICUL_F1 (id_echipa, id_model, greutate, pneuri, pret, data_inspectie) VALUES (3, 3, 798, 'Bridgestone', 15400000.00, TO_DATE('2024-02-28', 'YYYY-MM-DD'));
-INSERT INTO VEHICUL_F1 (id_echipa, id_model, greutate, pneuri, pret, data_inspectie) VALUES (4, 4, 798, 'Goodyear', 14800000.00, TO_DATE('2024-06-20', 'YYYY-MM-DD'));
-INSERT INTO VEHICUL_F1 (id_echipa, id_model, greutate, pneuri, pret, data_inspectie) VALUES (5, 5, 798, 'Pirelli', 14200000.00, TO_DATE('2024-07-10', 'YYYY-MM-DD'));
-INSERT INTO VEHICUL_F1 (id_echipa, id_model, greutate, pneuri, pret, data_inspectie) VALUES (6, 6, 799, 'Michelin', 13500000.00, TO_DATE('2024-03-02', 'YYYY-MM-DD'));
-INSERT INTO VEHICUL_F1 (id_echipa, id_model, greutate, pneuri, pret, data_inspectie) VALUES (7, 7, 798, 'Continental', 12500000.00, TO_DATE('2024-09-01', 'YYYY-MM-DD'));
-INSERT INTO VEHICUL_F1 (id_echipa, id_model, greutate, pneuri, pret, data_inspectie) VALUES (8, 8, 798, 'Michelin', 12800000.00, TO_DATE('2024-02-25', 'YYYY-MM-DD'));
-INSERT INTO VEHICUL_F1 (id_echipa, id_model, greutate, pneuri, pret, data_inspectie) VALUES (9, 9, 798, 'Goodyear', 11900000.00, TO_DATE('2024-08-15', 'YYYY-MM-DD'));
-INSERT INTO VEHICUL_F1 (id_echipa, id_model, greutate, pneuri, pret, data_inspectie) VALUES (10, 10, 798, 'Continental', 11000000.00, TO_DATE('2024-10-05', 'YYYY-MM-DD'));
+INSERT INTO VEHICUL_F1 (id_echipa, id_model, greutate, pneuri, pret, data_inspectie)  VALUES (1, 1, 798, 'Pirelli', 15500000.00, TO_DATE('2025-01-12', 'YYYY-MM-DD'));
+INSERT INTO VEHICUL_F1 (id_echipa, id_model, greutate, pneuri, pret, data_inspectie)  VALUES (2, 2, 798, 'Michelin', 15200000.00, TO_DATE('2025-04-27', 'YYYY-MM-DD'));
+INSERT INTO VEHICUL_F1 (id_echipa, id_model, greutate, pneuri, pret, data_inspectie)  VALUES (3, 3, 798, 'Bridgestone', 15400000.00, TO_DATE('2025-02-03', 'YYYY-MM-DD'));
+INSERT INTO VEHICUL_F1 (id_echipa, id_model, greutate, pneuri, pret, data_inspectie)  VALUES (4, 4, 798, 'Goodyear', 14800000.00, TO_DATE('2025-06-18', 'YYYY-MM-DD'));
+INSERT INTO VEHICUL_F1 (id_echipa, id_model, greutate, pneuri, pret, data_inspectie)  VALUES (5, 5, 798, 'Pirelli', 14200000.00, TO_DATE('2025-07-29', 'YYYY-MM-DD'));
+INSERT INTO VEHICUL_F1 (id_echipa, id_model, greutate, pneuri, pret, data_inspectie)  VALUES (6, 6, 799, 'Michelin', 13500000.00, TO_DATE('2025-03-11', 'YYYY-MM-DD'));
+INSERT INTO VEHICUL_F1 (id_echipa, id_model, greutate, pneuri, pret, data_inspectie)  VALUES (7, 7, 798, 'Continental', 12500000.00, TO_DATE('2025-09-22', 'YYYY-MM-DD'));
+INSERT INTO VEHICUL_F1 (id_echipa, id_model, greutate, pneuri, pret, data_inspectie)  VALUES (8, 8, 798, 'Michelin', 12800000.00, TO_DATE('2025-02-14', 'YYYY-MM-DD'));
+INSERT INTO VEHICUL_F1 (id_echipa, id_model, greutate, pneuri, pret, data_inspectie)  VALUES (9, 9, 798, 'Goodyear', 11900000.00, TO_DATE('2025-08-03', 'YYYY-MM-DD'));
+INSERT INTO VEHICUL_F1 (id_echipa, id_model, greutate, pneuri, pret, data_inspectie)  VALUES (10, 10, 798, 'Continental', 11000000.00, TO_DATE('2025-11-19', 'YYYY-MM-DD'));
+
 
 select * from vehicul_f1;
 
 
 -- DONE ✅
-INSERT INTO CURSA_F1 VALUES (1, 1, 'Grand Prix', TO_DATE('2024-03-02', 'YYYY-MM-DD'), 90, '1:31.447', 'Clear', 'Finished');
-INSERT INTO CURSA_F1 VALUES (2, 2, 'Qualifying', TO_DATE('2024-03-08', 'YYYY-MM-DD'), 60, '1:27.472', 'Clear', 'Finished');
-INSERT INTO CURSA_F1 VALUES (3, 3, 'Practice', TO_DATE('2024-03-22', 'YYYY-MM-DD'), 60, '1:19.813', 'Sunny', 'Finished');
-INSERT INTO CURSA_F1 VALUES (4, 4, 'Grand Prix', TO_DATE('2024-04-07', 'YYYY-MM-DD'), 45, '1:33.706', 'Rain', 'Suspended');
-INSERT INTO CURSA_F1 VALUES (5, 5, 'Sprint', TO_DATE('2024-04-20', 'YYYY-MM-DD'), 35, '1:32.238', 'Cloudy', 'Finished');
-INSERT INTO CURSA_F1 VALUES (6, 6, 'Grand Prix', TO_DATE('2024-05-05', 'YYYY-MM-DD'), 94, '1:27.382', 'Sunny', 'Finished');
-INSERT INTO CURSA_F1 VALUES (7, 7, 'Practice', TO_DATE('2024-05-17', 'YYYY-MM-DD'), 0, 'N/A', 'Storm', 'Cancelled');
-INSERT INTO CURSA_F1 VALUES (8, 8, 'Grand Prix', TO_DATE('2024-05-26', 'YYYY-MM-DD'), 120, '1:10.232', 'Clear', 'Finished');
-INSERT INTO CURSA_F1 VALUES (9, 9, 'Grand Prix', TO_DATE('2024-06-09', 'YYYY-MM-DD'), 95, '1:11.876', 'Rain', 'Planned');
-INSERT INTO CURSA_F1 VALUES (10, 10, 'Sprint', TO_DATE('2024-06-22', 'YYYY-MM-DD'), 30, '1:13.200', 'Sunny', 'Planned');
+INSERT INTO CURSA_F1 VALUES (1, 1, 'Grand Prix', TO_DATE('2025-01-05', 'YYYY-MM-DD'), 90, '1:31.447', 'Clear', 'Finished');
+INSERT INTO CURSA_F1 VALUES (2, 2, 'Qualifying', TO_DATE('2025-02-17', 'YYYY-MM-DD'), 60, '1:27.472', 'Clear', 'Finished');
+INSERT INTO CURSA_F1 VALUES (3, 3, 'Practice', TO_DATE('2025-03-11', 'YYYY-MM-DD'), 60, '1:19.813', 'Sunny', 'Finished');
+INSERT INTO CURSA_F1 VALUES (4, 4, 'Grand Prix', TO_DATE('2025-04-28', 'YYYY-MM-DD'), 45, '1:33.706', 'Rain', 'Suspended');
+INSERT INTO CURSA_F1 VALUES (5, 5, 'Sprint', TO_DATE('2025-05-09', 'YYYY-MM-DD'), 35, '1:32.238', 'Cloudy', 'Finished');
+INSERT INTO CURSA_F1 VALUES (6, 6, 'Grand Prix', TO_DATE('2025-06-03', 'YYYY-MM-DD'), 94, '1:27.382', 'Sunny', 'Finished');
+INSERT INTO CURSA_F1 VALUES (7, 7, 'Practice', TO_DATE('2025-07-14', 'YYYY-MM-DD'), 0, 'N/A', 'Storm', 'Cancelled');
+INSERT INTO CURSA_F1 VALUES (8, 8, 'Grand Prix', TO_DATE('2025-08-19', 'YYYY-MM-DD'), 120, '1:10.232', 'Clear', 'Finished');
+INSERT INTO CURSA_F1 VALUES (9, 9, 'Grand Prix', TO_DATE('2025-09-07', 'YYYY-MM-DD'), 95, '1:11.876', 'Rain', 'Planned');
+INSERT INTO CURSA_F1 VALUES (10, 10, 'Sprint', TO_DATE('2025-10-21', 'YYYY-MM-DD'), 30, '1:13.200', 'Sunny', 'Planned');
+
 
 select * from cursa_f1;
 
 
 -- DONE ✅
-INSERT INTO BILET_F1 (id_cursa, id_tip_bilet, loc_tribuna, loc_rand, loc_numar, data_achizitie, stare) VALUES (1, 1, 'A1', 1, 1, TO_DATE('2024-01-01', 'YYYY-MM-DD'), 'Sold');
-INSERT INTO BILET_F1 (id_cursa, id_tip_bilet, loc_tribuna, loc_rand, loc_numar, data_achizitie, stare) VALUES (2, 2, 'T3', 2, 2, TO_DATE('2024-01-02', 'YYYY-MM-DD'), 'Sold');
-INSERT INTO BILET_F1 (id_cursa, id_tip_bilet, loc_tribuna, loc_rand, loc_numar, data_achizitie, stare) VALUES (3, 3, 'B3', 3, 3, TO_DATE('2024-01-03', 'YYYY-MM-DD'), 'Sold');
-INSERT INTO BILET_F1 (id_cursa, id_tip_bilet, loc_tribuna, loc_rand, loc_numar, data_achizitie, stare) VALUES (4, 4, 'C2', 4, 4, TO_DATE('2024-01-04', 'YYYY-MM-DD'), 'Sold');
-INSERT INTO BILET_F1 (id_cursa, id_tip_bilet, loc_tribuna, loc_rand, loc_numar, data_achizitie, stare) VALUES (5, 5, 'D5', 5, 5, TO_DATE('2024-01-05', 'YYYY-MM-DD'), 'Sold');
-INSERT INTO BILET_F1 (id_cursa, id_tip_bilet, loc_tribuna, loc_rand, loc_numar, data_achizitie, stare) VALUES (6, 6, 'E1', 6, 6, TO_DATE('2024-01-06', 'YYYY-MM-DD'), 'Sold');
-INSERT INTO BILET_F1 (id_cursa, id_tip_bilet, loc_tribuna, loc_rand, loc_numar, data_achizitie, stare) VALUES (7, 2, 'F4', 7, 7, TO_DATE('2024-01-07', 'YYYY-MM-DD'), 'Sold');
-INSERT INTO BILET_F1 (id_cursa, id_tip_bilet, loc_tribuna, loc_rand, loc_numar, data_achizitie, stare) VALUES (8, 3, 'G2', 8, 8, TO_DATE('2024-01-08', 'YYYY-MM-DD'), 'Sold');
-INSERT INTO BILET_F1 (id_cursa, id_tip_bilet, loc_tribuna, loc_rand, loc_numar, data_achizitie, stare) VALUES (9, 4, 'H3', 9, 9, TO_DATE('2024-01-09', 'YYYY-MM-DD'), 'Sold');
-INSERT INTO BILET_F1 (id_cursa, id_tip_bilet, loc_tribuna, loc_rand, loc_numar, data_achizitie, stare) VALUES (10, 5, 'J1', 10, 10, TO_DATE('2024-01-10', 'YYYY-MM-DD'), 'Valid');
+INSERT INTO BILET_F1 (id_cursa, id_tip_bilet, loc_tribuna, loc_rand, loc_numar, data_achizitie, stare) VALUES (1, 1, 'A1', 1, 1, TO_DATE('2024-02-14', 'YYYY-MM-DD'), 'Sold');
+INSERT INTO BILET_F1 (id_cursa, id_tip_bilet, loc_tribuna, loc_rand, loc_numar, data_achizitie, stare) VALUES (2, 2, 'T3', 2, 2, TO_DATE('2024-03-05', 'YYYY-MM-DD'), 'Sold');
+INSERT INTO BILET_F1 (id_cursa, id_tip_bilet, loc_tribuna, loc_rand, loc_numar, data_achizitie, stare) VALUES (3, 3, 'B3', 3, 3, TO_DATE('2024-01-22', 'YYYY-MM-DD'), 'Sold');
+INSERT INTO BILET_F1 (id_cursa, id_tip_bilet, loc_tribuna, loc_rand, loc_numar, data_achizitie, stare) VALUES (4, 4, 'C2', 4, 4, TO_DATE('2024-04-11', 'YYYY-MM-DD'), 'Sold');
+INSERT INTO BILET_F1 (id_cursa, id_tip_bilet, loc_tribuna, loc_rand, loc_numar, data_achizitie, stare) VALUES (5, 5, 'D5', 5, 5, TO_DATE('2024-02-27', 'YYYY-MM-DD'), 'Sold');
+INSERT INTO BILET_F1 (id_cursa, id_tip_bilet, loc_tribuna, loc_rand, loc_numar, data_achizitie, stare) VALUES (6, 6, 'E1', 6, 6, TO_DATE('2024-03-29', 'YYYY-MM-DD'), 'Sold');
+INSERT INTO BILET_F1 (id_cursa, id_tip_bilet, loc_tribuna, loc_rand, loc_numar, data_achizitie, stare) VALUES (7, 2, 'F4', 7, 7, TO_DATE('2024-05-03', 'YYYY-MM-DD'), 'Sold');
+INSERT INTO BILET_F1 (id_cursa, id_tip_bilet, loc_tribuna, loc_rand, loc_numar, data_achizitie, stare) VALUES (8, 3, 'G2', 8, 8, TO_DATE('2024-06-18', 'YYYY-MM-DD'), 'Sold');
+INSERT INTO BILET_F1 (id_cursa, id_tip_bilet, loc_tribuna, loc_rand, loc_numar, data_achizitie, stare) VALUES (9, 4, 'H3', 9, 9, TO_DATE('2024-07-09', 'YYYY-MM-DD'), 'Sold');
+INSERT INTO BILET_F1 (id_cursa, id_tip_bilet, loc_tribuna, loc_rand, loc_numar, data_achizitie, stare) VALUES (10, 5, 'J1', 10, 10, TO_DATE('2024-08-25', 'YYYY-MM-DD'), 'Valid');
 
 select * from bilet_f1;
 
 -- DONE ✅
-INSERT INTO ECHIPA_SPONSOR_F1 (id_echipa, id_sponsor, contributie_financiara) VALUES (1, 1, 100000000.00);
-INSERT INTO ECHIPA_SPONSOR_F1 (id_echipa, id_sponsor, contributie_financiara) VALUES (2, 2, 75000000.00);
-INSERT INTO ECHIPA_SPONSOR_F1 (id_echipa, id_sponsor, contributie_financiara) VALUES (3, 3, 40000000.00);
-INSERT INTO ECHIPA_SPONSOR_F1 (id_echipa, id_sponsor, contributie_financiara) VALUES (4, 4, 30000000.00);
-INSERT INTO ECHIPA_SPONSOR_F1 (id_echipa, id_sponsor, contributie_financiara) VALUES (5, 5, 60000000.00);
-INSERT INTO ECHIPA_SPONSOR_F1 (id_echipa, id_sponsor, contributie_financiara) VALUES (6, 6, 35000000.00);
-INSERT INTO ECHIPA_SPONSOR_F1 (id_echipa, id_sponsor, contributie_financiara) VALUES (7, 8, 20000000.00);
-INSERT INTO ECHIPA_SPONSOR_F1 (id_echipa, id_sponsor, contributie_financiara) VALUES (8, 8, 15000000.00);
-INSERT INTO ECHIPA_SPONSOR_F1 (id_echipa, id_sponsor, contributie_financiara) VALUES (9, 9, 45000000.00);
-INSERT INTO ECHIPA_SPONSOR_F1 (id_echipa, id_sponsor, contributie_financiara) VALUES (10, 10, 25000000.00);
+INSERT INTO ECHIPA_SPONSOR_F1 VALUES (1, 1, 100000000.00, 'YES');
+INSERT INTO ECHIPA_SPONSOR_F1  VALUES (2, 2, 75000000.00, 'YES');
+INSERT INTO ECHIPA_SPONSOR_F1  VALUES (3, 3, 40000000.00, 'YES');
+INSERT INTO ECHIPA_SPONSOR_F1  VALUES (4, 4, 30000000.00, 'YES');
+INSERT INTO ECHIPA_SPONSOR_F1  VALUES (5, 5, 60000000.00, 'YES');
+INSERT INTO ECHIPA_SPONSOR_F1  VALUES (6, 6, 35000000.00, 'YES');
+INSERT INTO ECHIPA_SPONSOR_F1  VALUES (7, 8, 20000000.00, 'YES');
+INSERT INTO ECHIPA_SPONSOR_F1  VALUES (8, 8, 15000000.00, 'YES');
+INSERT INTO ECHIPA_SPONSOR_F1  VALUES (9, 9, 45000000.00, 'YES');
+INSERT INTO ECHIPA_SPONSOR_F1  VALUES (10, 10, 25000000.00, 'YES');
 
 select * from echipa_sponsor_f1;
 
 
 --- DONE ✅
-INSERT INTO PILOT_CURSA_F1 (id_pilot, id_cursa, pozitie_start, pozitie_finala) VALUES (1, 1, 1, 1);
-INSERT INTO PILOT_CURSA_F1 (id_pilot, id_cursa, pozitie_start, pozitie_finala) VALUES (2, 1, 5, 2);
-INSERT INTO PILOT_CURSA_F1 (id_pilot, id_cursa, pozitie_start, pozitie_finala) VALUES (3, 1, 2, 4);
-INSERT INTO PILOT_CURSA_F1 (id_pilot, id_cursa, pozitie_start, pozitie_finala) VALUES (4, 1, 4, 3);
-INSERT INTO PILOT_CURSA_F1 (id_pilot, id_cursa, pozitie_start, pozitie_finala) VALUES (5, 1, 9, 7);
-INSERT INTO PILOT_CURSA_F1 (id_pilot, id_cursa, pozitie_start, pozitie_finala) VALUES (6, 1, 3, 5);
-INSERT INTO PILOT_CURSA_F1 (id_pilot, id_cursa, pozitie_start, pozitie_finala) VALUES (7, 1, 7, 6);
-INSERT INTO PILOT_CURSA_F1 (id_pilot, id_cursa, pozitie_start, pozitie_finala) VALUES (8, 1, 8, 8);
-INSERT INTO PILOT_CURSA_F1 (id_pilot, id_cursa, pozitie_start, pozitie_finala) VALUES (9, 1, 6, 9);
-INSERT INTO PILOT_CURSA_F1 (id_pilot, id_cursa, pozitie_start, pozitie_finala) VALUES (10, 1, 12, 10);
+INSERT INTO PILOT_CURSA_F1  VALUES (1, 1, 1, 1);
+INSERT INTO PILOT_CURSA_F1  VALUES (2, 1, 5, 2);
+INSERT INTO PILOT_CURSA_F1  VALUES (3, 1, 2, 4);
+INSERT INTO PILOT_CURSA_F1  VALUES (4, 1, 4, 3);
+INSERT INTO PILOT_CURSA_F1  VALUES (5, 1, 9, 7);
+INSERT INTO PILOT_CURSA_F1  VALUES (6, 1, 3, 5);
+INSERT INTO PILOT_CURSA_F1  VALUES (7, 1, 7, 6);
+INSERT INTO PILOT_CURSA_F1  VALUES (8, 1, 8, 8);
+INSERT INTO PILOT_CURSA_F1  VALUES (9, 1, 6, 9);
+INSERT INTO PILOT_CURSA_F1  VALUES (10, 1, 12, 10);
+
 
 select * from pilot_cursa_f1;
+
+
+
+---------------------------------------------------------------------------------------------
+
+
+-- 6
+
+-- Administratorul bazei de date vrea să obțină un raport financiar al echipelor, folosind subprogram stocat. Subprogramul trebuie să facă următoarele:
+--      VARRAY: colectează numele echipelor care au primit sponsorizări mai mari de o anumită sumă totală.
+--      Nested Table: pentru aceste echipe, stochează numărul de sponsori activi (adică care au contribuit cu > 0).
+--      Indexed Table: pentru fiecare echipă, calculează procentul sponsorizărilor față de buget (sponsori / buget * 100).
+
+CREATE OR REPLACE PROCEDURE analiza_echipe_usoara IS
+    TYPE varray_echipe IS VARRAY(5) OF VARCHAR2(100);
+    lista_echipe varray_echipe := varray_echipe();
+
+    TYPE tbl_bugete IS TABLE OF NUMBER;
+    bugete tbl_bugete := tbl_bugete();
+
+    TYPE map_nr_sponsori IS TABLE OF NUMBER INDEX BY VARCHAR2(100);
+    nr_sponsori map_nr_sponsori;
+
+BEGIN
+    SELECT nume BULK COLLECT INTO lista_echipe
+    FROM echipa_f1
+    WHERE ROWNUM <= 5;
+
+    bugete.EXTEND(lista_echipe.COUNT);
+    FOR i IN 1 .. lista_echipe.COUNT LOOP
+        SELECT buget INTO bugete(i)
+        FROM echipa_f1
+        WHERE nume = lista_echipe(i);
+    END LOOP;
+
+    FOR i IN 1 .. lista_echipe.COUNT LOOP
+        SELECT COUNT(*) INTO nr_sponsori(lista_echipe(i))
+        FROM echipa_sponsor_f1 es
+        JOIN echipa_f1 e ON e.id_echipa = es.id_echipa
+        WHERE e.nume = lista_echipe(i) AND es.status_activ = 'YES';
+    END LOOP;
+
+    DBMS_OUTPUT.PUT_LINE('--- Primele 5 echipe ---');
+    FOR i IN 1 .. lista_echipe.COUNT LOOP
+        DBMS_OUTPUT.PUT_LINE('Echipa: ' || lista_echipe(i));
+        DBMS_OUTPUT.PUT_LINE(' - Buget: ' || bugete(i));
+        DBMS_OUTPUT.PUT_LINE(' - Nr sponsori activi: ' || nr_sponsori(lista_echipe(i)));
+        DBMS_OUTPUT.PUT_LINE('---------------------------');
+    END LOOP;
+
+END;
+
+
+BEGIN
+    analiza_echipe_usoara;
+END;
+
