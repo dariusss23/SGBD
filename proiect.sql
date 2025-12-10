@@ -374,10 +374,10 @@ select * from pilot_cursa_f1;
 
 -- 6
 
--- Administratorul bazei de date vrea să obțină un raport financiar al echipelor, folosind subprogram stocat. Subprogramul trebuie să facă următoarele:
---      VARRAY: colectează numele echipelor care au primit sponsorizări mai mari de o anumită sumă totală.
---      Nested Table: pentru aceste echipe, stochează numărul de sponsori activi (adică care au contribuit cu > 0).
---      Indexed Table: pentru fiecare echipă, calculează procentul sponsorizărilor față de buget (sponsori / buget * 100).
+-- Administratorul bazei de date vrea să vadă primele 5 echipe:
+--     VARRAY: numele echipelor.
+--     Nested Table: bugetul fiecărei echipe.
+--     Associative Array: numărul de sponsori activi pentru fiecare echipă.
 
 CREATE OR REPLACE PROCEDURE analiza_echipe_usoara IS
     TYPE varray_echipe IS VARRAY(5) OF VARCHAR2(100);
@@ -422,4 +422,5 @@ END;
 BEGIN
     analiza_echipe_usoara;
 END;
+
 
