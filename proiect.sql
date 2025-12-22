@@ -161,9 +161,7 @@ CREATE TABLE ISTORIC_ECHIPA_PILOT (
     salariu DECIMAL(15, 2),
     
     FOREIGN KEY (id_echipa) REFERENCES ECHIPA_F1(id_echipa),
-    FOREIGN KEY (id_pilot) REFERENCES PILOT_F1(id_pilot),
-    
-    CONSTRAINT chk_perioada CHECK (data_final >= data_inceput)
+    FOREIGN KEY (id_pilot) REFERENCES PILOT_F1(id_pilot)
 );
 
 
@@ -376,8 +374,8 @@ select * from pilot_cursa_f1;
 
 -- Administratorul bazei de date vrea să vadă primele 5 echipe:
 --     VARRAY: numele echipelor.
---     Nested Table: bugetul fiecărei echipe.
---     Associative Array: numărul de sponsori activi pentru fiecare echipă.
+--     Nested Table: bugetul fiecarei echipe.
+--     Associative Array: numarul de sponsori activi pentru fiecare echipa.
 
 CREATE OR REPLACE PROCEDURE analiza_echipe_usoara IS
     TYPE varray_echipe IS VARRAY(5) OF VARCHAR2(100);
@@ -422,5 +420,244 @@ END;
 BEGIN
     analiza_echipe_usoara;
 END;
+
+
+-- 7
+-- Conducerea Formula 1 doreste o lista clara a cheltuielilor salariale pentru fiecare echipa. 
+-- Sa se creeze o procedura stocata care parcurge lista echipelor existente (folosind un cursor implicit de tip FOR). 
+-- Pentru fiecare echipa gasita, procedura va cauta si afisa toti pilotii care au semnat contracte cu aceasta, 
+-- utilizand un cursor explicit parametrizat. Acest al doilea cursor depinde direct de identificatorul echipei 
+-- selectate la pasul anterior."
+
+
+CREATE OR REPLACE PROCEDURE raport_piloti_activi IS
+    CURSOR cursor_piloti_activi (id_echipa_importata NUMBER) IS
+        SELECT P.nume, P.prenume, I.salariu, I.data_final
+        FROM ISTORIC_ECHIPA_PILOT I
+        JOIN PILOT_F1 P ON I.id_pilot = P.id_pilot
+        WHERE I.id_echipa = id_echipa_importata AND I.data_final >= SYSDATE;
+
+    nume_pilot      PILOT_F1.nume%TYPE;
+    prenume_pilot   PILOT_F1.prenume%TYPE;
+    salariu_angajat ISTORIC_ECHIPA_PILOT.salariu%TYPE;
+    data_expirare   ISTORIC_ECHIPA_PILOT.data_final%TYPE;
+
+BEGIN
+    DBMS_OUTPUT.PUT_LINE('=== PILOTI CU CONTRACTE ACTIVE ===');
+    DBMS_OUTPUT.PUT_LINE('');
+
+    FOR echipa_curenta IN (SELECT id_echipa, nume FROM ECHIPA_F1 ORDER BY nume) LOOP
+        
+        DBMS_OUTPUT.PUT_LINE('Echipa: ' || echipa_curenta.nume);
+        
+        OPEN cursor_piloti_activi(echipa_curenta.id_echipa);
+        
+        LOOP
+            FETCH cursor_piloti_activi INTO nume_pilot, prenume_pilot, salariu_angajat, data_expirare;
+            EXIT WHEN cursor_piloti_activi%NOTFOUND;
+            
+            DBMS_OUTPUT.PUT_LINE('-> ' || nume_pilot || ' ' || prenume_pilot || ' | Salariu ' || salariu_angajat || ' EURO | ' || '(Expira la: ' || TO_CHAR(data_expirare, 'DD.MM.YYYY') || ')');
+        END LOOP;
+
+        IF cursor_piloti_activi%ROWCOUNT = 0 THEN
+            DBMS_OUTPUT.PUT_LINE('-> (Niciun pilot activ gasit)');
+        END IF;
+
+        CLOSE cursor_piloti_activi;
+        DBMS_OUTPUT.PUT_LINE('----------------------------------');
+        
+    END LOOP;
+END;
+
+BEGIN
+    raport_piloti_activi;
+END;
+
+
+-- 8
+
+
+CREATE OR REPLACE FUNCTION get_tech_info_pneuri(p_marca_pneuri VARCHAR2) 
+RETURN VARCHAR2 
+IS
+    v_nume_echipa ECHIPA_F1.nume%TYPE;
+    v_nume_model  MODEL_VEHICUL_F1.nume%TYPE;
+BEGIN
+    SELECT e.nume, m.nume INTO v_nume_echipa, v_nume_model
+    FROM VEHICUL_F1 v
+    JOIN ECHIPA_F1 e ON v.id_echipa = e.id_echipa
+    JOIN MODEL_VEHICUL_F1 m ON v.id_model = m.id_model
+    WHERE UPPER(v.pneuri) = UPPER(p_marca_pneuri);
+
+    RETURN 'Brandul ' || p_marca_pneuri || ' echipeaza modelul ' || v_nume_model || ' al echipei ' || v_nume_echipa || '.';
+
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        RETURN 'Nu exista niciun vehicul inregistrat cu pneuri marca: ' || p_marca_pneuri;
+        
+    WHEN TOO_MANY_ROWS THEN
+        RETURN 'Eroare: ' || p_marca_pneuri || ' furnizeaza pneuri pentru mai multe echipe diferite.';
+        
+    WHEN OTHERS THEN
+        RETURN 'Eroare tehnica: ' || SQLERRM;
+END;
+
+
+-- 9 
+
+CREATE OR REPLACE PROCEDURE PR_VENIT_ANUAL_PILOT (
+    cod_pilot_intrare IN INT,
+    an_ales           IN NUMBER
+) IS
+    suma_totala_calculata DECIMAL(15, 2);
+    numar_verificare      INT;
+
+    PILOT_NEIDENTIFICAT   EXCEPTION;
+    FARA_CURSE_IN_AN      EXCEPTION;
+BEGIN
+    SELECT COUNT(*) INTO numar_verificare FROM PILOT_F1 WHERE id_pilot = cod_pilot_intrare;
+    IF numar_verificare = 0 THEN 
+        RAISE PILOT_NEIDENTIFICAT; 
+    END IF;
+
+    SELECT COUNT(*) INTO numar_verificare
+    FROM PILOT_CURSA_F1 pc
+    JOIN CURSA_F1 c ON pc.id_cursa = c.id_cursa 
+    WHERE pc.id_pilot = cod_pilot_intrare AND EXTRACT(YEAR FROM c.data_cursa) = an_ales; 
+
+    IF numar_verificare = 0 THEN 
+        RAISE FARA_CURSE_IN_AN; 
+    END IF;
+
+    SELECT
+        NVL(MAX(h.salariu), 0) + 
+        NVL(SUM(DISTINCT es.contributie_financiara), 0) + 
+        (COUNT(DISTINCT b.id_bilet) * 100)
+    INTO suma_totala_calculata
+    FROM PILOT_F1 p
+    JOIN ISTORIC_ECHIPA_PILOT h ON p.id_pilot = h.id_pilot 
+    JOIN ECHIPA_SPONSOR_F1 es   ON h.id_echipa = es.id_echipa
+    JOIN PILOT_CURSA_F1 pc      ON p.id_pilot = pc.id_pilot 
+    JOIN CURSA_F1 c             ON pc.id_cursa = c.id_cursa 
+    LEFT JOIN BILET_F1 b        ON c.id_cursa = b.id_cursa 
+    WHERE p.id_pilot = cod_pilot_intrare
+      AND EXTRACT(YEAR FROM c.data_cursa) = an_ales
+      AND an_ales BETWEEN EXTRACT(YEAR FROM h.data_inceput) AND EXTRACT(YEAR FROM h.data_final); 
+
+    DBMS_OUTPUT.PUT_LINE('Venit total pentru anul ' || an_ales || ': ' || suma_totala_calculata || ' EUR');
+
+EXCEPTION
+    WHEN PILOT_NEIDENTIFICAT THEN
+        DBMS_OUTPUT.PUT_LINE('Eroare: Nu am gasit pilotul cu codul ' || cod_pilot_intrare);
+    WHEN FARA_CURSE_IN_AN THEN
+        DBMS_OUTPUT.PUT_LINE('Eroare: Pilotul nu a participat la nicio cursa in anul ' || an_ales);
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('A aparut o eroare neprevazuta.');
+END;
+
+-- 10
+
+-- odată ce mașinile intră în regim de calificare sau cursă, 
+-- echipele nu mai au voie să facă modificări tehnice
+
+CREATE OR REPLACE TRIGGER trg_parc_ferme_vehicule
+BEFORE INSERT OR UPDATE OR DELETE ON VEHICUL_F1
+DECLARE
+    v_status_blocat NUMBER;
+BEGIN
+    -- Verificăm dacă există curse active (In desfasurare sau Suspended)
+    -- Această logică se bazează pe datele din coloana 'status' a tabelului CURSA_F1 [cite: 13]
+    SELECT COUNT(*) INTO v_status_blocat
+    FROM CURSA_F1
+    WHERE status IN ('In desfasurare', 'Suspended');
+
+    IF v_status_blocat > 0 THEN
+        RAISE_APPLICATION_ERROR(-20015, 'Regim Parc Ferme ACTIV: Nu se pot modifica datele vehiculelor in timpul unei curse active!');
+    END IF;
+    
+    DBMS_OUTPUT.PUT_LINE('Verificare Parc Ferme: OK. Operatia este permisa.');
+END;
+
+----------------------------------
+
+CREATE OR REPLACE TRIGGER trg_complex_control_parc_ferme
+BEFORE INSERT OR UPDATE OR DELETE ON VEHICUL_F1
+DECLARE
+    v_status_cursa VARCHAR2(20);
+    v_nume_circuit VARCHAR2(100);
+BEGIN
+    -- Căutăm dacă există o cursă programată sau în desfășurare pentru data curentă
+    BEGIN
+        SELECT c.status, cir.nume
+        INTO v_status_cursa, v_nume_circuit
+        FROM CURSA_F1 c
+        JOIN CIRCUIT_F1 cir ON c.id_circuit = cir.id_circuit
+        WHERE TRUNC(c.data_cursa) = TRUNC(SYSDATE)
+        FETCH FIRST 1 ROW ONLY;
+    EXCEPTION
+        WHEN NO_DATA_FOUND THEN
+            v_status_cursa := 'Nicio Cursa';
+    END;
+
+    -- LOGICĂ DE CONTROL DIFERENȚIATĂ (Folosind predicatele LMD din laborator [cite: 277-286])
+    
+    -- 1. Dacă există o cursă activă, blocăm TOTAL orice modificare tehnică (Regula Parc Fermé)
+    IF v_status_cursa IN ('In desfasurare', 'Suspended') THEN
+        RAISE_APPLICATION_ERROR(-20020, 'BLOCAJ CRITIC: Cursa de pe circuitul ' || v_nume_circuit || 
+            ' este activa. Nu se pot face modificari LMD asupra vehiculelor!');
+    
+    -- 2. Dacă este zi de cursă, dar nu a început încă, permitem doar actualizări (UPDATING), nu ștergeri
+    ELSIF v_status_cursa = 'Planned' THEN
+        IF DELETING THEN
+            RAISE_APPLICATION_ERROR(-20021, 'STARE PRE-CURSA: Stergerea vehiculelor este interzisa in ziua evenimentului.');
+        END IF;
+        DBMS_OUTPUT.PUT_LINE('Verificare efectuata: Actualizarile sunt permise inaintea cursei ' || v_nume_circuit);
+
+    -- 3. Dacă nu este zi de cursă, permitem orice operație, dar logăm simbolic evenimentul
+    ELSE
+        DBMS_OUTPUT.PUT_LINE('Sistem deschis: Nu exista restrictii active pentru vehicule astazi.');
+    END IF;
+END;
+
+
+-- 11
+
+
+CREATE OR REPLACE TRIGGER trg_validare_contract_pilot
+BEFORE INSERT OR UPDATE ON ISTORIC_ECHIPA_PILOT
+FOR EACH ROW
+BEGIN
+    IF :NEW.data_final <= :NEW.data_inceput THEN
+        RAISE_APPLICATION_ERROR(-20002, 'Eroare: Data de final (' || 
+            TO_CHAR(:NEW.data_final, 'DD-MON-YYYY') || 
+            ') trebuie să fie după data de inceput.');
+    END IF;
+
+    IF :NEW.salariu < 500000 THEN
+        RAISE_APPLICATION_ERROR(-20003, 'Eroare: Salariul introdus (' || 
+            :NEW.salariu || ') este sub pragul minim permis in F1.');
+    END IF;
+END;
+
+-- 12
+
+CREATE TABLE AUDIT_F1 (
+    utilizator   VARCHAR2(30),
+    nume_bd      VARCHAR2(50),
+    eveniment    VARCHAR2(20),
+    nume_obiect  VARCHAR2(30),
+    data_log     DATE
+);
+
+CREATE OR REPLACE TRIGGER trig_audit_ldd_f1
+AFTER CREATE OR DROP OR ALTER ON SCHEMA
+BEGIN
+    INSERT INTO AUDIT_F1
+    VALUES (SYS.LOGIN_USER, SYS.DATABASE_NAME, SYS.SYSEVENT, SYS.DICTIONARY_OBJ_NAME, SYSDATE);
+END;
+
+
+-- 13
+
 
 
