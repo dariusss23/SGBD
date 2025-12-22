@@ -1,3 +1,5 @@
+SET SERVEROUTPUT ON;
+
 DROP TABLE PILOT_CURSA_F1;
 DROP TABLE ECHIPA_SPONSOR_F1;
 DROP TABLE BILET_F1;
@@ -100,12 +102,12 @@ CREATE TABLE VEHICUL_F1 (
 CREATE TABLE CURSA_F1 (
     id_cursa INT PRIMARY KEY,
     id_circuit INT NOT NULL, 
-    tip_cursa VARCHAR(50), 
+    tip_cursa VARCHAR(50) CHECK (tip_cursa IN ('Grand Prix', 'Sprint Race', 'Test Session')),
     data_cursa DATE,
     durata INT, 
     record_timp VARCHAR(20),
     vreme VARCHAR(50),
-    status VARCHAR(20), 
+    status VARCHAR(20) CHECK (status IN ('Cancelled', 'Suspended', 'Finished')),
     
     FOREIGN KEY (id_circuit) REFERENCES CIRCUIT_F1(id_circuit)
 );
@@ -120,7 +122,7 @@ CREATE TABLE BILET_F1 (
     loc_rand INT,
     loc_numar INT,
     data_achizitie DATE,
-    stare VARCHAR(20), 
+    stare VARCHAR(20) CHECK (stare IN ('SOLD', 'VALID')),
     
     FOREIGN KEY (id_cursa) REFERENCES CURSA_F1(id_cursa),
     FOREIGN KEY (id_tip_bilet) REFERENCES TIP_BILET_F1(id_tip_bilet)
@@ -132,7 +134,7 @@ CREATE TABLE ECHIPA_SPONSOR_F1 (
     id_sponsor INT,
     PRIMARY KEY (id_echipa, id_sponsor),
     contributie_financiara DECIMAL(15, 2),
-    status_activ CHAR(3),
+    status_activ VARCHAR2(3) CHECK (status_activ IN ('YES', 'NO')),
     
     FOREIGN KEY (id_echipa) REFERENCES ECHIPA_F1(id_echipa),
     FOREIGN KEY (id_sponsor) REFERENCES SPONSOR_F1(id_sponsor)
@@ -431,7 +433,8 @@ END;
 
 
 CREATE OR REPLACE PROCEDURE raport_piloti_activi IS
-    CURSOR cursor_piloti_activi (id_echipa_importata NUMBER) IS
+    CURSOR cursor_piloti_activi (id_echipa_importata NUMBER) 
+    IS
         SELECT P.nume, P.prenume, I.salariu, I.data_final
         FROM ISTORIC_ECHIPA_PILOT I
         JOIN PILOT_F1 P ON I.id_pilot = P.id_pilot
@@ -515,7 +518,9 @@ CREATE OR REPLACE PROCEDURE PR_VENIT_ANUAL_PILOT (
     PILOT_NEIDENTIFICAT   EXCEPTION;
     FARA_CURSE_IN_AN      EXCEPTION;
 BEGIN
-    SELECT COUNT(*) INTO numar_verificare FROM PILOT_F1 WHERE id_pilot = cod_pilot_intrare;
+    SELECT COUNT(*) INTO numar_verificare 
+    FROM PILOT_F1 WHERE id_pilot = cod_pilot_intrare;
+    
     IF numar_verificare = 0 THEN 
         RAISE PILOT_NEIDENTIFICAT; 
     END IF;
@@ -540,9 +545,7 @@ BEGIN
     JOIN PILOT_CURSA_F1 pc      ON p.id_pilot = pc.id_pilot 
     JOIN CURSA_F1 c             ON pc.id_cursa = c.id_cursa 
     LEFT JOIN BILET_F1 b        ON c.id_cursa = b.id_cursa 
-    WHERE p.id_pilot = cod_pilot_intrare
-      AND EXTRACT(YEAR FROM c.data_cursa) = an_ales
-      AND an_ales BETWEEN EXTRACT(YEAR FROM h.data_inceput) AND EXTRACT(YEAR FROM h.data_final); 
+    WHERE p.id_pilot = cod_pilot_intrare AND EXTRACT(YEAR FROM c.data_cursa) = an_ales AND an_ales BETWEEN EXTRACT(YEAR FROM h.data_inceput) AND EXTRACT(YEAR FROM h.data_final); 
 
     DBMS_OUTPUT.PUT_LINE('Venit total pentru anul ' || an_ales || ': ' || suma_totala_calculata || ' EUR');
 
@@ -554,6 +557,93 @@ EXCEPTION
     WHEN OTHERS THEN
         DBMS_OUTPUT.PUT_LINE('A aparut o eroare neprevazuta.');
 END;
+
+
+-------------------------------------
+
+CREATE OR REPLACE PROCEDURE PR_VENIT_ANUAL_PILOT (
+    cod_pilot_intrare IN INT,
+    an_ales           IN NUMBER
+) IS
+    suma_totala_calculata NUMBER(15,2);
+    numar_verificare      NUMBER;
+
+    PILOT_NEIDENTIFICAT  EXCEPTION;
+    FARA_CURSE_IN_AN     EXCEPTION;
+    FARA_CONTRACT_IN_AN  EXCEPTION;
+BEGIN
+    SELECT COUNT(*) INTO numar_verificare
+    FROM PILOT_F1
+    WHERE id_pilot = cod_pilot_intrare;
+
+    IF numar_verificare = 0 THEN
+        RAISE PILOT_NEIDENTIFICAT;
+    END IF;
+
+    SELECT COUNT(*) INTO numar_verificare
+    FROM PILOT_CURSA_F1 pc
+    JOIN CURSA_F1 c ON pc.id_cursa = c.id_cursa
+    WHERE pc.id_pilot = cod_pilot_intrare AND EXTRACT(YEAR FROM c.data_cursa) = an_ales;
+
+    IF numar_verificare = 0 THEN
+        RAISE FARA_CURSE_IN_AN;
+    END IF;
+
+    SELECT COUNT(*) INTO numar_verificare
+    FROM ISTORIC_ECHIPA_PILOT
+    WHERE id_pilot = cod_pilot_intrare AND an_ales BETWEEN EXTRACT(YEAR FROM data_inceput) AND EXTRACT(YEAR FROM data_final);
+
+    IF numar_verificare = 0 THEN
+        RAISE FARA_CONTRACT_IN_AN;
+    END IF;
+
+    SELECT
+        NVL(MAX(h.salariu), 0) + NVL(SUM(DISTINCT es.contributie_financiara), 0) +
+        NVL(SUM(
+            CASE tb.categorie
+                WHEN 'Bronze'     THEN 100
+                WHEN 'Silver'     THEN 200
+                WHEN 'Gold'       THEN 300
+                WHEN 'Platinum'   THEN 500
+                WHEN 'VIP'        THEN 800
+                WHEN 'Exclusive'  THEN 1200
+                ELSE 0
+            END
+        ), 0)
+    INTO suma_totala_calculata
+    FROM PILOT_F1 p
+    LEFT JOIN ISTORIC_ECHIPA_PILOT h ON p.id_pilot = h.id_pilot AND an_ales BETWEEN EXTRACT(YEAR FROM h.data_inceput) AND EXTRACT(YEAR FROM h.data_final)
+    LEFT JOIN ECHIPA_SPONSOR_F1 es ON h.id_echipa = es.id_echipa
+    JOIN PILOT_CURSA_F1 pc ON p.id_pilot = pc.id_pilot
+    JOIN CURSA_F1 c ON pc.id_cursa = c.id_cursa AND EXTRACT(YEAR FROM c.data_cursa) = an_ales
+    LEFT JOIN BILET_F1 b ON c.id_cursa = b.id_cursa
+    LEFT JOIN TIP_BILET_F1 tb ON b.id_tip_bilet = tb.id_tip_bilet
+    WHERE p.id_pilot = cod_pilot_intrare;
+
+    DBMS_OUTPUT.PUT_LINE(
+        'Venitul total al pilotului in anul ' || an_ales ||
+        ' este: ' || suma_totala_calculata || ' EUR'
+    );
+
+EXCEPTION
+    WHEN PILOT_NEIDENTIFICAT THEN
+        DBMS_OUTPUT.PUT_LINE('Eroare: Pilotul nu exista.');
+
+    WHEN FARA_CURSE_IN_AN THEN
+        DBMS_OUTPUT.PUT_LINE(
+            'Eroare: Pilotul nu a participat la nicio cursa in anul ' || an_ales
+        );
+
+    WHEN FARA_CONTRACT_IN_AN THEN
+        DBMS_OUTPUT.PUT_LINE(
+            'Atentie: Pilotul nu a avut contract activ in anul ' || an_ales ||
+            '. Venitul provine doar din bilete.'
+        );
+
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Eroare neprevazuta.');
+END;
+
 
 -- 10
 
@@ -628,24 +718,21 @@ BEFORE INSERT OR UPDATE ON ISTORIC_ECHIPA_PILOT
 FOR EACH ROW
 BEGIN
     IF :NEW.data_final <= :NEW.data_inceput THEN
-        RAISE_APPLICATION_ERROR(-20002, 'Eroare: Data de final (' || 
-            TO_CHAR(:NEW.data_final, 'DD-MON-YYYY') || 
-            ') trebuie să fie după data de inceput.');
+        RAISE_APPLICATION_ERROR(-20002, 'Eroare: Data de final (' || TO_CHAR(:NEW.data_final, 'DD-MON-YYYY') || ') trebuie să fie după data de inceput.');
     END IF;
 
     IF :NEW.salariu < 500000 THEN
-        RAISE_APPLICATION_ERROR(-20003, 'Eroare: Salariul introdus (' || 
-            :NEW.salariu || ') este sub pragul minim permis in F1.');
+        RAISE_APPLICATION_ERROR(-20003, 'Eroare: Salariul introdus (' || :NEW.salariu || ') este sub pragul minim permis in F1.');
     END IF;
 END;
 
 -- 12
 
 CREATE TABLE AUDIT_F1 (
-    utilizator   VARCHAR2(30),
-    nume_bd      VARCHAR2(50),
-    eveniment    VARCHAR2(20),
-    nume_obiect  VARCHAR2(30),
+    utilizator   VARCHAR(30),
+    nume_bd      VARCHAR(50),
+    eveniment    VARCHAR(20),
+    nume_obiect  VARCHAR(30),
     data_log     DATE
 );
 
@@ -659,5 +746,124 @@ END;
 
 -- 13
 
+CREATE OR REPLACE PACKAGE PKG_ANALIZA_PILOT IS
+    TYPE t_info_cursa IS RECORD (
+        id_cursa CURSA_F1.id_cursa%TYPE,
+        tip_cursa CURSA_F1.tip_cursa%TYPE,
+        data_cursa CURSA_F1.data_cursa%TYPE,
+        pozitie_finala PILOT_CURSA_F1.pozitie_finala%TYPE
+    );
+
+    TYPE t_lista_curse IS TABLE OF t_info_cursa
+        INDEX BY PLS_INTEGER;
+
+    FUNCTION nr_curse_pilot (
+        p_id_pilot IN PILOT_F1.id_pilot%TYPE,
+        p_an       IN NUMBER
+    ) RETURN NUMBER;
+
+    FUNCTION pozitie_medie_pilot (
+        p_id_pilot IN PILOT_F1.id_pilot%TYPE,
+        p_an       IN NUMBER
+    ) RETURN NUMBER;
+
+    PROCEDURE incarca_curse_pilot (
+        p_id_pilot IN PILOT_F1.id_pilot%TYPE,
+        p_an       IN NUMBER,
+        p_curse    OUT t_lista_curse
+    );
+
+    PROCEDURE raport_pilot_sezon (
+        p_id_pilot IN PILOT_F1.id_pilot%TYPE,
+        p_an       IN NUMBER
+    );
+
+END PKG_ANALIZA_PILOT;
+
+CREATE OR REPLACE PACKAGE BODY PKG_ANALIZA_PILOT IS
+
+    FUNCTION nr_curse_pilot (
+        p_id_pilot IN PILOT_F1.id_pilot%TYPE,
+        p_an       IN NUMBER
+    ) 
+    RETURN NUMBER 
+    IS
+        v_nr NUMBER;
+    BEGIN
+        SELECT COUNT(*) INTO v_nr
+        FROM PILOT_CURSA_F1 pc
+        JOIN CURSA_F1 c ON pc.id_cursa = c.id_cursa
+        WHERE pc.id_pilot = p_id_pilot AND EXTRACT(YEAR FROM c.data_cursa) = p_an;
+
+        RETURN v_nr;
+    END;
+
+    FUNCTION pozitie_medie_pilot (
+        p_id_pilot IN PILOT_F1.id_pilot%TYPE,
+        p_an       IN NUMBER
+    ) 
+    RETURN NUMBER 
+    IS
+        v_medie NUMBER;
+    BEGIN
+        SELECT AVG(pc.pozitie_finala) INTO v_medie
+        FROM PILOT_CURSA_F1 pc
+        JOIN CURSA_F1 c ON pc.id_cursa = c.id_cursa
+        WHERE pc.id_pilot = p_id_pilot AND EXTRACT(YEAR FROM c.data_cursa) = p_an;
+
+        RETURN v_medie;
+    END;
+
+    PROCEDURE incarca_curse_pilot (
+        p_id_pilot IN PILOT_F1.id_pilot%TYPE,
+        p_an       IN NUMBER,
+        p_curse    OUT t_lista_curse
+    ) IS
+        i NUMBER := 0;
+    BEGIN
+        FOR rec IN (
+            SELECT c.id_cursa, c.tip_cursa, c.data_cursa, pc.pozitie_finala
+            FROM PILOT_CURSA_F1 pc
+            JOIN CURSA_F1 c ON pc.id_cursa = c.id_cursa
+            WHERE pc.id_pilot = p_id_pilot AND EXTRACT(YEAR FROM c.data_cursa) = p_an
+            ORDER BY c.data_cursa
+        )
+        LOOP
+            i := i+1;
+            p_curse(i).id_cursa := rec.id_cursa;
+            p_curse(i).tip_cursa := rec.tip_cursa;
+            p_curse(i).data_cursa := rec.data_cursa;
+            p_curse(i).pozitie_finala := rec.pozitie_finala;
+        END LOOP;
+    END;
+
+    PROCEDURE raport_pilot_sezon (
+        p_id_pilot IN PILOT_F1.id_pilot%TYPE,
+        p_an       IN NUMBER
+    ) IS
+        v_curse t_lista_curse;
+        v_nr    NUMBER;
+        v_medie NUMBER;
+    BEGIN
+        incarca_curse_pilot(p_id_pilot, p_an, v_curse);
+
+        v_nr    := nr_curse_pilot(p_id_pilot, p_an);
+        v_medie := pozitie_medie_pilot(p_id_pilot, p_an);
+
+        DBMS_OUTPUT.PUT_LINE('Raport pilot ' || p_id_pilot || ' pentru anul ' || p_an);
+        DBMS_OUTPUT.PUT_LINE('Numar curse: ' || v_nr);
+        DBMS_OUTPUT.PUT_LINE('Pozitie medie: ' || NVL(v_medie, 0));
+
+        FOR i IN v_curse.FIRST .. v_curse.LAST LOOP
+            DBMS_OUTPUT.PUT_LINE('Cursa ' || v_curse(i).id_cursa || ' | Tip: ' || v_curse(i).tip_cursa || ' | Data: ' || v_curse(i).data_cursa || ' | Pozitie: ' || v_curse(i).pozitie_finala);
+        END LOOP;
+    END;
+
+END PKG_ANALIZA_PILOT;
 
 
+BEGIN
+    PKG_ANALIZA_PILOT.raport_pilot_sezon(3, 2025);
+END;
+
+ 
