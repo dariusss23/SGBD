@@ -380,13 +380,13 @@ select * from pilot_cursa_f1;
 --     Associative Array: numarul de sponsori activi pentru fiecare echipa.
 
 CREATE OR REPLACE PROCEDURE analiza_echipe IS
-    TYPE varray_echipe IS VARRAY(5) OF VARCHAR2(100);
+    TYPE varray_echipe IS VARRAY(5) OF VARCHAR(100);
     lista_echipe varray_echipe := varray_echipe();
 
     TYPE tbl_bugete IS TABLE OF NUMBER;
     bugete tbl_bugete := tbl_bugete();
 
-    TYPE tbl_nr_sponsori IS TABLE OF NUMBER INDEX BY VARCHAR2(100);
+    TYPE tbl_nr_sponsori IS TABLE OF NUMBER INDEX BY VARCHAR(100);
     nr_sponsori tbl_nr_sponsori;
 
 BEGIN
@@ -398,7 +398,9 @@ BEGIN
     FOR i IN 1 .. lista_echipe.COUNT LOOP
         SELECT buget INTO bugete(i)
         FROM ECHIPA_F1
-        WHERE nume = lista_echipe(i);
+        WHERE nume = lista_echipe(i)
+        ORDER BY an_infiintare DESC;
+        
     END LOOP;
 
     FOR i IN 1 .. lista_echipe.COUNT LOOP
@@ -408,7 +410,7 @@ BEGIN
         WHERE E.nume = lista_echipe(i) AND ES.status_activ = 'YES';
     END LOOP;
 
-    DBMS_OUTPUT.PUT_LINE('--- Primele 5 echipe ---');
+    DBMS_OUTPUT.PUT_LINE('--- Primele 5 echipe cele mai noi infiintate ---');
     DBMS_OUTPUT.PUT_LINE('');
     FOR i IN 1 .. lista_echipe.COUNT LOOP
         DBMS_OUTPUT.PUT_LINE('Echipa: ' || lista_echipe(i));
@@ -418,7 +420,6 @@ BEGIN
     END LOOP;
 
 END;
-
 
 BEGIN
     analiza_echipe;
@@ -542,7 +543,7 @@ CREATE OR REPLACE PROCEDURE PR_VENIT_ANUAL_PILOT (
 ) IS
     suma_totala_calculata NUMBER(15,2);
     numar_verificare      NUMBER;
-    -- Variabile noi pentru nume
+    
     nume_pilot            VARCHAR2(50);
     prenume_pilot         VARCHAR2(50);
 
@@ -550,42 +551,37 @@ CREATE OR REPLACE PROCEDURE PR_VENIT_ANUAL_PILOT (
     FARA_CURSE_IN_AN      EXCEPTION;
     FARA_CONTRACT_IN_AN   EXCEPTION;
 BEGIN
-    -- Verificam daca pilotul exista si ii luam numele (Table 6)
     BEGIN
         SELECT nume, prenume INTO nume_pilot, prenume_pilot
         FROM PILOT_F1
         WHERE id_pilot = cod_pilot_intrare;
-    EXCEPTION
-        WHEN NO_DATA_FOUND THEN
-            RAISE PILOT_NEIDENTIFICAT;
+        
+        EXCEPTION
+            WHEN NO_DATA_FOUND THEN
+                RAISE PILOT_NEIDENTIFICAT;
     END;
 
-    -- Verificarea participarilor la curse (Table 16 & 13)
     SELECT COUNT(*) INTO numar_verificare
-    FROM PILOT_CURSA_F1 pc
-    JOIN CURSA_F1 c ON pc.id_cursa = c.id_cursa
-    WHERE pc.id_pilot = cod_pilot_intrare 
-      AND EXTRACT(YEAR FROM c.data_cursa) = an_ales;
+    FROM PILOT_CURSA_F1 PC
+    JOIN CURSA_F1 c ON PC.id_cursa = C.id_cursa
+    WHERE pc.id_pilot = cod_pilot_intrare AND EXTRACT(YEAR FROM c.data_cursa) = an_ales;
 
     IF numar_verificare = 0 THEN
         RAISE FARA_CURSE_IN_AN;
     END IF;
 
-    -- Verificarea contractului (Table 17)
     SELECT COUNT(*) INTO numar_verificare
     FROM ISTORIC_ECHIPA_PILOT
-    WHERE id_pilot = cod_pilot_intrare 
-      AND an_ales BETWEEN EXTRACT(YEAR FROM data_inceput) AND EXTRACT(YEAR FROM data_final);
+    WHERE id_pilot = cod_pilot_intrare AND an_ales BETWEEN EXTRACT(YEAR FROM data_inceput) AND EXTRACT(YEAR FROM data_final);
 
     IF numar_verificare = 0 THEN
         RAISE FARA_CONTRACT_IN_AN;
     END IF;
 
-    -- Calculul veniturilor folosind 5+ tabele (PILOT, ISTORIC, ECHIPA_SPONSOR, CURSA, BILET, TIP_BILET)
     SELECT
-        NVL(MAX(h.salariu), 0) + NVL(SUM(DISTINCT es.contributie_financiara), 0) +
+        NVL(MAX(H.salariu), 0) + NVL(SUM(DISTINCT ES.contributie_financiara), 0) +
         NVL(SUM(
-            CASE tb.categorie
+            CASE TB.categorie
                 WHEN 'Bronze'     THEN 100
                 WHEN 'Silver'     THEN 200
                 WHEN 'Gold'       THEN 300
@@ -596,32 +592,31 @@ BEGIN
             END
         ), 0)
     INTO suma_totala_calculata
-    FROM PILOT_F1 p
-    LEFT JOIN ISTORIC_ECHIPA_PILOT h ON p.id_pilot = h.id_pilot AND an_ales BETWEEN EXTRACT(YEAR FROM h.data_inceput) AND EXTRACT(YEAR FROM h.data_final)
-    LEFT JOIN ECHIPA_SPONSOR_F1 es ON h.id_echipa = es.id_echipa
-    JOIN PILOT_CURSA_F1 pc ON p.id_pilot = pc.id_pilot
-    JOIN CURSA_F1 c ON pc.id_cursa = c.id_cursa AND EXTRACT(YEAR FROM c.data_cursa) = an_ales
-    LEFT JOIN BILET_F1 b ON c.id_cursa = b.id_cursa
-    LEFT JOIN TIP_BILET_F1 tb ON b.id_tip_bilet = tb.id_tip_bilet
+    FROM PILOT_F1 P
+    LEFT JOIN ISTORIC_ECHIPA_PILOT H ON P.id_pilot = H.id_pilot AND an_ales BETWEEN EXTRACT(YEAR FROM H.data_inceput) AND EXTRACT(YEAR FROM H.data_final)
+    LEFT JOIN ECHIPA_SPONSOR_F1 ES ON H.id_echipa = ES.id_echipa
+    JOIN PILOT_CURSA_F1 PC ON P.id_pilot = PC.id_pilot
+    JOIN CURSA_F1 C ON PC.id_cursa = C.id_cursa AND EXTRACT(YEAR FROM C.data_cursa) = an_ales
+    LEFT JOIN BILET_F1 B ON C.id_cursa = B.id_cursa
+    LEFT JOIN TIP_BILET_F1 TB ON B.id_tip_bilet = TB.id_tip_bilet
     WHERE p.id_pilot = cod_pilot_intrare;
 
     DBMS_OUTPUT.PUT_LINE('Raport financiar pentru: ' || prenume_pilot || ' ' || nume_pilot);
     DBMS_OUTPUT.PUT_LINE('Venitul total in anul ' || an_ales || ' este: ' || suma_totala_calculata || ' EUR');
 
-EXCEPTION
-    WHEN PILOT_NEIDENTIFICAT THEN
-        DBMS_OUTPUT.PUT_LINE('Eroare: Pilotul cu ID ' || cod_pilot_intrare || ' nu exista.');
-
-    WHEN FARA_CURSE_IN_AN THEN
-        DBMS_OUTPUT.PUT_LINE('Eroare: Pilotul ' || prenume_pilot || ' ' || nume_pilot || 
-                             ' nu a participat la nicio cursa in anul ' || an_ales);
-
-    WHEN FARA_CONTRACT_IN_AN THEN
-        DBMS_OUTPUT.PUT_LINE('Atentie: ' || prenume_pilot || ' ' || nume_pilot || 
-                             ' nu a avut contract activ in ' || an_ales || '. Venitul provine doar din bilete.');
-
-    WHEN OTHERS THEN
-        DBMS_OUTPUT.PUT_LINE('Eroare neprevazuta: ' || SQLERRM);
+    EXCEPTION
+        WHEN PILOT_NEIDENTIFICAT THEN
+            DBMS_OUTPUT.PUT_LINE('Eroare: Pilotul cu ID ' || cod_pilot_intrare || ' nu exista.');
+    
+        WHEN FARA_CURSE_IN_AN THEN
+            DBMS_OUTPUT.PUT_LINE('Eroare: Pilotul ' || prenume_pilot || ' ' || nume_pilot || 
+                                 ' nu a participat la nicio cursa in anul ' || an_ales);
+    
+        WHEN FARA_CONTRACT_IN_AN THEN
+            DBMS_OUTPUT.PUT_LINE('Atentie: ' || prenume_pilot || ' ' || nume_pilot || ' nu a avut contract activ in ' || an_ales || '. Venitul provine doar din bilete.');
+    
+        WHEN OTHERS THEN
+            DBMS_OUTPUT.PUT_LINE('Eroare neprevazuta: ' || SQLERRM);
 END;
 
 BEGIN
@@ -641,8 +636,8 @@ END;
 
 -- 10
 
--- odată ce mașinile intră în regim de calificare sau cursă, 
--- echipele nu mai au voie să facă modificări tehnice
+-- odata ce masinile intra in regim de calificare sau cursa, 
+-- echipele nu mai au voie sa faca modificari tehnice
 
 CREATE OR REPLACE TRIGGER trg_complex_control_parc_ferme
 BEFORE INSERT OR UPDATE OR DELETE ON VEHICUL_F1
@@ -650,10 +645,8 @@ DECLARE
     v_status_cursa VARCHAR2(20);
     v_nume_circuit VARCHAR2(100);
 BEGIN
-    -- Căutăm dacă există o cursă programată sau în desfășurare pentru data curentă
     BEGIN
-        SELECT c.status, cir.nume
-        INTO v_status_cursa, v_nume_circuit
+        SELECT c.status, cir.nume INTO v_status_cursa, v_nume_circuit
         FROM CURSA_F1 c
         JOIN CIRCUIT_F1 cir ON c.id_circuit = cir.id_circuit
         WHERE TRUNC(c.data_cursa) = TRUNC(SYSDATE)
@@ -675,6 +668,46 @@ BEGIN
     END IF;
 END;
 
+---------------------
+UPDATE CURSA_F1 
+SET data_cursa = SYSDATE 
+WHERE id_cursa = 4;
+
+-- Pasul B: Încercăm să modificăm un vehicul (orice UPDATE)
+UPDATE VEHICUL_F1 
+SET greutate = 800 
+WHERE id_vehicul = 1;
+
+rollback;
+
+-------------------
+
+-- Pasul A: Punem cursa 9 pe data de azi
+UPDATE CURSA_F1 
+SET data_cursa = SYSDATE, status = 'Planned' 
+WHERE id_cursa = 9;
+
+-- Pasul B: Încercăm un DELETE (va eșua)
+DELETE FROM VEHICUL_F1 WHERE id_vehicul = 1;
+-- REZULTAT: Eroare -20021: "STARE PRE-CURSA: Stergerea vehiculelor este interzisa..."
+
+-- Pasul C: Încercăm un UPDATE (va reuși)
+UPDATE VEHICUL_F1 SET pneuri = 'Medium' WHERE id_vehicul = 1;
+-- REZULTAT: "Verificare efectuata: Actualizarile sunt permise inaintea cursei Marina Bay...
+rollback;
+
+-------------------
+
+-- Pasul A: Mutăm toate cursele de pe data de azi (dacă am făcut testele de mai sus)
+UPDATE CURSA_F1 SET data_cursa = TO_DATE('2025-12-31', 'YYYY-MM-DD') 
+WHERE TRUNC(data_cursa) = TRUNC(SYSDATE);
+
+-- Pasul B: Orice modificare pe vehicule
+UPDATE VEHICUL_F1 SET pret = pret + 1 WHERE id_vehicul = 1;
+-- REZULTAT: "Sistem deschis: Nu exista restrictii active pentru vehicule astazi."
+
+rollback;
+
 -- 11
 
 CREATE OR REPLACE TRIGGER trg_validare_contract_pilot
@@ -689,6 +722,7 @@ BEGIN
         RAISE_APPLICATION_ERROR(-20003, 'Eroare: Salariul introdus (' || :NEW.salariu || ') este sub pragul minim permis in F1.');
     END IF;
 END;
+
 
 -- 12
 
@@ -740,9 +774,9 @@ CREATE OR REPLACE PACKAGE BODY PKG_ANALIZA_PILOT IS
         numar_total NUMBER;
     BEGIN
         SELECT COUNT(*) INTO numar_total 
-        FROM PILOT_CURSA_F1 pc
-        JOIN CURSA_F1 c ON pc.id_cursa = c.id_cursa
-        WHERE pc.id_pilot = identificator_pilot AND EXTRACT(YEAR FROM c.data_cursa) = an_sezon;
+        FROM PILOT_CURSA_F1 PC
+        JOIN CURSA_F1 C ON PC.id_cursa = C.id_cursa
+        WHERE PC.id_pilot = identificator_pilot AND EXTRACT(YEAR FROM C.data_cursa) = an_sezon;
 
         RETURN numar_total;
     END nr_curse_pilot;
@@ -754,8 +788,8 @@ CREATE OR REPLACE PACKAGE BODY PKG_ANALIZA_PILOT IS
     BEGIN
         SELECT AVG(pc.pozitie_finala) INTO valoare_medie
         FROM PILOT_CURSA_F1 pc
-        JOIN CURSA_F1 c ON pc.id_cursa = c.id_cursa
-        WHERE pc.id_pilot = identificator_pilot AND EXTRACT(YEAR FROM c.data_cursa) = an_sezon;
+        JOIN CURSA_F1 c ON PC.id_cursa = C.id_cursa
+        WHERE PC.id_pilot = identificator_pilot AND EXTRACT(YEAR FROM C.data_cursa) = an_sezon;
 
         RETURN valoare_medie;
     END pozitie_medie_pilot;
@@ -765,10 +799,11 @@ CREATE OR REPLACE PACKAGE BODY PKG_ANALIZA_PILOT IS
         contor NUMBER := 0;
     BEGIN
         FOR r_cursa IN (
-            SELECT c.id_cursa, c.tip_cursa, c.data_cursa, pc.pozitie_finala FROM PILOT_CURSA_F1 pc
-            JOIN CURSA_F1 c ON pc.id_cursa = c.id_cursa
-            WHERE pc.id_pilot = identificator_pilot AND EXTRACT(YEAR FROM c.data_cursa) = an_sezon
-            ORDER BY c.data_cursa
+            SELECT C.id_cursa, C.tip_cursa, C.data_cursa, PC.pozitie_finala 
+            FROM PILOT_CURSA_F1 PC
+            JOIN CURSA_F1 C ON PC.id_cursa = C.id_cursa
+            WHERE PC.id_pilot = identificator_pilot AND EXTRACT(YEAR FROM C.data_cursa) = an_sezon
+            ORDER BY C.data_cursa
         )
         LOOP
             contor := contor + 1;
