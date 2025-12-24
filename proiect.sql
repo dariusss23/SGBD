@@ -478,61 +478,67 @@ END;
 
 -- 8
 
-
-CREATE OR REPLACE FUNCTION get_tech_info_pneuri(p_marca_pneuri VARCHAR2) 
-RETURN VARCHAR2 
+CREATE OR REPLACE FUNCTION model_cel_mai_rapid_echipa (
+    id_echipa_cautata IN NUMBER
+) RETURN VARCHAR2
 IS
-    v_nume_echipa ECHIPA_F1.nume%TYPE;
-    v_nume_model  MODEL_VEHICUL_F1.nume%TYPE;
-BEGIN
-    SELECT e.nume, m.nume INTO v_nume_echipa, v_nume_model
-    FROM VEHICUL_F1 v
-    JOIN ECHIPA_F1 e ON v.id_echipa = e.id_echipa
-    JOIN MODEL_VEHICUL_F1 m ON v.id_model = m.id_model
-    WHERE UPPER(v.pneuri) = UPPER(p_marca_pneuri);
+    nume_model MODEL_VEHICUL_F1.nume%TYPE;
+    exista_echipa NUMBER;
 
-    RETURN 'Brandul ' || p_marca_pneuri || ' echipeaza modelul ' || v_nume_model || ' al echipei ' || v_nume_echipa || '.';
+    ECHIPA_INEXISTENTA EXCEPTION;
+BEGIN
+    SELECT COUNT(*) INTO exista_echipa
+    FROM ECHIPA_F1
+    WHERE id_echipa = id_echipa_cautata;
+
+    IF exista_echipa = 0 THEN
+        RAISE ECHIPA_INEXISTENTA;
+    END IF;
+
+    SELECT MV.nume INTO nume_model
+    FROM VEHICUL_F1 V
+    JOIN MODEL_VEHICUL_F1 MV ON V.id_model = MV.id_model
+    WHERE V.id_echipa = id_echipa_cautata
+      AND MV.viteza_maxima = (
+            SELECT MAX(MV2.viteza_maxima)
+            FROM VEHICUL_F1 V2
+            JOIN MODEL_VEHICUL_F1 MV2 ON V2.id_model = MV2.id_model
+            WHERE V2.id_echipa = id_echipa_cautata
+      );
+
+    RETURN nume_model;
 
 EXCEPTION
+    WHEN ECHIPA_INEXISTENTA THEN
+        DBMS_OUTPUT.PUT_LINE('Echipa nu exista.');
+
     WHEN NO_DATA_FOUND THEN
-        RETURN 'Nu exista niciun vehicul inregistrat cu pneuri marca: ' || p_marca_pneuri;
-        
+        DBMS_OUTPUT.PUT_LINE('Echipa exista, dar nu are vehicule inregistrate.');
+
     WHEN TOO_MANY_ROWS THEN
-        RETURN 'Eroare: ' || p_marca_pneuri || ' furnizeaza pneuri pentru mai multe echipe diferite.';
-        
+        DBMS_OUTPUT.PUT_LINE('Exista mai multe modele cu aceeasi viteza maxima pentru aceasta echipa.');
+
     WHEN OTHERS THEN
-        RETURN 'Eroare tehnica: ' || SQLERRM;
+        DBMS_OUTPUT.PUT_LINE('Eroare neasteptata: ' || SQLERRM);
 END;
 
 
--------
-
-CREATE OR REPLACE FUNCTION f_obtine_viteza_maxima (
-    tara_sediu VARCHAR2,
-    tip_pneuri VARCHAR2
-) 
-RETURN NUMBER 
-IS
-    rezultat_viteza NUMBER;
 BEGIN
-    SELECT m.viteza_maxima INTO rezultat_viteza
-    FROM ECHIPA_F1 e
-    JOIN VEHICUL_F1 v ON e.id_echipa = v.id_echipa
-    JOIN MODEL_VEHICUL_F1 m ON v.id_model = m.id_model
-    WHERE e.sediu = tara_sediu AND v.pneuri = tip_pneuri;
-
-    RETURN rezultat_viteza;
-
-EXCEPTION
-    WHEN NO_DATA_FOUND THEN
-        DBMS_OUTPUT.PUT_LINE('INFO: Nu s-a gasit niciun vehicul pentru sediul ' || tara_sediu || ' cu pneuri ' || tip_pneuri);
-
-    WHEN TOO_MANY_ROWS THEN
-        DBMS_OUTPUT.PUT_LINE('EROARE: Exista mai multe echipe in ' || tara_sediu || ' care folosesc pneuri ' || tip_pneuri);
-
-    WHEN OTHERS THEN
-        DBMS_OUTPUT.PUT_LINE('EROARE CRITICA: ' || SQLERRM);
+    DBMS_OUTPUT.PUT_LINE('Model rapid: ' || model_cel_mai_rapid_echipa(1));
 END;
+
+BEGIN
+    DBMS_OUTPUT.PUT_LINE(model_cel_mai_rapid_echipa(9999));
+END; 
+
+INSERT INTO MODEL_VEHICUL_F1 VALUES (99, 'RB20-B', 'High Downforce', 350);
+INSERT INTO VEHICUL_F1 (id_echipa, id_model, greutate, pneuri, pret, data_inspectie)VALUES (1, 99, 798, 'Pirelli', 15000000, SYSDATE);
+
+BEGIN
+    DBMS_OUTPUT.PUT_LINE(model_cel_mai_rapid_echipa(1));
+END;
+
+rollback;
 
 
 -- 9 
@@ -703,7 +709,9 @@ UPDATE CURSA_F1 SET data_cursa = TO_DATE('2025-12-31', 'YYYY-MM-DD')
 WHERE TRUNC(data_cursa) = TRUNC(SYSDATE);
 
 -- Pasul B: Orice modificare pe vehicule
-UPDATE VEHICUL_F1 SET pret = pret + 1 WHERE id_vehicul = 1;
+UPDATE VEHICUL_F1 
+SET pret = pret + 1 
+WHERE id_vehicul = 1;
 -- REZULTAT: "Sistem deschis: Nu exista restrictii active pentru vehicule astazi."
 
 rollback;
