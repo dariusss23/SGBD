@@ -292,16 +292,16 @@ select * from istoric_echipa_pilot;
 
 
 -- DONE ✅ 
-INSERT INTO VEHICUL_F1 (id_echipa, id_model, greutate, pneuri, pret, data_inspectie)  VALUES (1, 1, 798, 'Pirelli', 15500000.00, TO_DATE('2025-01-12', 'YYYY-MM-DD'));
-INSERT INTO VEHICUL_F1 (id_echipa, id_model, greutate, pneuri, pret, data_inspectie)  VALUES (2, 2, 798, 'Michelin', 15200000.00, TO_DATE('2025-04-27', 'YYYY-MM-DD'));
-INSERT INTO VEHICUL_F1 (id_echipa, id_model, greutate, pneuri, pret, data_inspectie)  VALUES (3, 3, 798, 'Bridgestone', 15400000.00, TO_DATE('2025-02-03', 'YYYY-MM-DD'));
-INSERT INTO VEHICUL_F1 (id_echipa, id_model, greutate, pneuri, pret, data_inspectie)  VALUES (4, 4, 798, 'Goodyear', 14800000.00, TO_DATE('2025-06-18', 'YYYY-MM-DD'));
-INSERT INTO VEHICUL_F1 (id_echipa, id_model, greutate, pneuri, pret, data_inspectie)  VALUES (5, 5, 798, 'Pirelli', 14200000.00, TO_DATE('2025-07-29', 'YYYY-MM-DD'));
+INSERT INTO VEHICUL_F1 (id_echipa, id_model, greutate, pneuri, pret, data_inspectie)  VALUES (1, 1, 794, 'Pirelli', 15500000.00, TO_DATE('2025-01-12', 'YYYY-MM-DD'));
+INSERT INTO VEHICUL_F1 (id_echipa, id_model, greutate, pneuri, pret, data_inspectie)  VALUES (2, 2, 792, 'Michelin', 15200000.00, TO_DATE('2025-04-27', 'YYYY-MM-DD'));
+INSERT INTO VEHICUL_F1 (id_echipa, id_model, greutate, pneuri, pret, data_inspectie)  VALUES (3, 3, 780, 'Bridgestone', 15400000.00, TO_DATE('2025-02-03', 'YYYY-MM-DD'));
+INSERT INTO VEHICUL_F1 (id_echipa, id_model, greutate, pneuri, pret, data_inspectie)  VALUES (4, 4, 783, 'Goodyear', 14800000.00, TO_DATE('2025-06-18', 'YYYY-MM-DD'));
+INSERT INTO VEHICUL_F1 (id_echipa, id_model, greutate, pneuri, pret, data_inspectie)  VALUES (5, 5, 790, 'Pirelli', 14200000.00, TO_DATE('2025-07-29', 'YYYY-MM-DD'));
 INSERT INTO VEHICUL_F1 (id_echipa, id_model, greutate, pneuri, pret, data_inspectie)  VALUES (6, 6, 799, 'Michelin', 13500000.00, TO_DATE('2025-03-11', 'YYYY-MM-DD'));
-INSERT INTO VEHICUL_F1 (id_echipa, id_model, greutate, pneuri, pret, data_inspectie)  VALUES (7, 7, 798, 'Continental', 12500000.00, TO_DATE('2025-09-22', 'YYYY-MM-DD'));
-INSERT INTO VEHICUL_F1 (id_echipa, id_model, greutate, pneuri, pret, data_inspectie)  VALUES (8, 8, 798, 'Michelin', 12800000.00, TO_DATE('2025-02-14', 'YYYY-MM-DD'));
-INSERT INTO VEHICUL_F1 (id_echipa, id_model, greutate, pneuri, pret, data_inspectie)  VALUES (9, 9, 798, 'Goodyear', 11900000.00, TO_DATE('2025-08-03', 'YYYY-MM-DD'));
-INSERT INTO VEHICUL_F1 (id_echipa, id_model, greutate, pneuri, pret, data_inspectie)  VALUES (10, 10, 798, 'Continental', 11000000.00, TO_DATE('2025-11-19', 'YYYY-MM-DD'));
+INSERT INTO VEHICUL_F1 (id_echipa, id_model, greutate, pneuri, pret, data_inspectie)  VALUES (7, 7, 791, 'Continental', 12500000.00, TO_DATE('2025-09-22', 'YYYY-MM-DD'));
+INSERT INTO VEHICUL_F1 (id_echipa, id_model, greutate, pneuri, pret, data_inspectie)  VALUES (8, 8, 787, 'Michelin', 12800000.00, TO_DATE('2025-02-14', 'YYYY-MM-DD'));
+INSERT INTO VEHICUL_F1 (id_echipa, id_model, greutate, pneuri, pret, data_inspectie)  VALUES (9, 9, 788, 'Goodyear', 11900000.00, TO_DATE('2025-08-03', 'YYYY-MM-DD'));
+INSERT INTO VEHICUL_F1 (id_echipa, id_model, greutate, pneuri, pret, data_inspectie)  VALUES (10, 10, 795, 'Continental', 11000000.00, TO_DATE('2025-11-19', 'YYYY-MM-DD'));
 
 
 select * from vehicul_f1;
@@ -374,12 +374,11 @@ select * from pilot_cursa_f1;
 
 -- 6
 
--- Administratorul bazei de date vrea să vadă primele 5 echipe:
---     VARRAY: numele echipelor.
---     Nested Table: bugetul fiecarei echipe.
---     Associative Array: numarul de sponsori activi pentru fiecare echipa.
+-- Sa se realizeze o procedura care analizeaza ultimele cinci echipe infiintate, 
+-- utilizand un Varray pentru nume, un tabel imbricat pentru bugete si un tabel indexat
+-- pentru numarul de sponsori activi, cu scopul de a genera un raport de sustenabilitate comerciala.
 
-CREATE OR REPLACE PROCEDURE analiza_echipe IS
+CREATE OR REPLACE PROCEDURE p_analiza_echipe IS
     TYPE varray_echipe IS VARRAY(5) OF VARCHAR(100);
     lista_echipe varray_echipe := varray_echipe();
 
@@ -392,14 +391,14 @@ CREATE OR REPLACE PROCEDURE analiza_echipe IS
 BEGIN
     SELECT nume BULK COLLECT INTO lista_echipe
     FROM ECHIPA_F1
-    WHERE ROWNUM <= 5;
+    ORDER BY an_infiintare DESC
+    FETCH FIRST 5 ROWS ONLY;
 
     bugete.EXTEND(lista_echipe.COUNT);
     FOR i IN 1 .. lista_echipe.COUNT LOOP
         SELECT buget INTO bugete(i)
         FROM ECHIPA_F1
-        WHERE nume = lista_echipe(i)
-        ORDER BY an_infiintare DESC;
+        WHERE nume = lista_echipe(i);
         
     END LOOP;
 
@@ -422,7 +421,7 @@ BEGIN
 END;
 
 BEGIN
-    analiza_echipe;
+    p_analiza_echipe;
 END;
 
 
@@ -432,7 +431,7 @@ END;
 -- Sa se realizeze un subprogram stocat independent (procedura) care sa genereze un raport al contractelor active. 
 
 
-CREATE OR REPLACE PROCEDURE raport_piloti_activi IS
+CREATE OR REPLACE PROCEDURE p_raport_piloti_activi IS
     CURSOR cursor_piloti_activi (id_echipa_importata NUMBER) 
     IS
         SELECT P.nume, P.prenume, I.salariu, I.data_final
@@ -472,15 +471,21 @@ BEGIN
 END;
 
 BEGIN
-    raport_piloti_activi;
+    p_raport_piloti_activi;
 END;
 
 
 -- 8
 
-CREATE OR REPLACE FUNCTION model_cel_mai_rapid_echipa (
+-- Mecanicii fiecarei echipe au nevoie de o metoda rapida pentru a identifica modelul de maasina care detine recordul de viteza din garajul lor 
+-- Se va realiza o functie care primeste codul echipei si returneaza denumirea celui mai rapid model, interogand simultan tabelele ECHIPA_F1, VEHICUL_F1 si MODEL_VEHICUL_F1 
+-- Inspectorii tehnici vor folosi acest subprogram pentru a valida datele, functia gestionand exceptiile pentru coduri de echipa inexistente, 
+-- lipsa mașinilor din inventar sau existenta mai multor modele cu aceeasi viteza maxima.
+
+CREATE OR REPLACE FUNCTION f_model_cel_mai_rapid_echipa (
     id_echipa_cautata IN NUMBER
-) RETURN VARCHAR2
+) 
+RETURN VARCHAR
 IS
     nume_model MODEL_VEHICUL_F1.nume%TYPE;
     exista_echipa NUMBER;
@@ -495,55 +500,62 @@ BEGIN
         RAISE ECHIPA_INEXISTENTA;
     END IF;
 
-    SELECT MV.nume INTO nume_model
-    FROM VEHICUL_F1 V
+    SELECT DISTINCT MV.nume INTO nume_model
+    FROM ECHIPA_F1 E
+    JOIN VEHICUL_F1 V ON E.id_echipa = V.id_echipa
     JOIN MODEL_VEHICUL_F1 MV ON V.id_model = MV.id_model
-    WHERE V.id_echipa = id_echipa_cautata
-      AND MV.viteza_maxima = (
-            SELECT MAX(MV2.viteza_maxima)
-            FROM VEHICUL_F1 V2
-            JOIN MODEL_VEHICUL_F1 MV2 ON V2.id_model = MV2.id_model
-            WHERE V2.id_echipa = id_echipa_cautata
-      );
+    WHERE E.id_echipa = id_echipa_cautata AND MV.viteza_maxima = (
+                SELECT MAX(MV2.viteza_maxima)
+                FROM VEHICUL_F1 V2
+                JOIN MODEL_VEHICUL_F1 MV2 ON V2.id_model = MV2.id_model
+                WHERE V2.id_echipa = id_echipa_cautata
+                );
 
     RETURN nume_model;
 
-EXCEPTION
-    WHEN ECHIPA_INEXISTENTA THEN
-        DBMS_OUTPUT.PUT_LINE('Echipa nu exista.');
-
-    WHEN NO_DATA_FOUND THEN
-        DBMS_OUTPUT.PUT_LINE('Echipa exista, dar nu are vehicule inregistrate.');
-
-    WHEN TOO_MANY_ROWS THEN
-        DBMS_OUTPUT.PUT_LINE('Exista mai multe modele cu aceeasi viteza maxima pentru aceasta echipa.');
-
-    WHEN OTHERS THEN
-        DBMS_OUTPUT.PUT_LINE('Eroare neasteptata: ' || SQLERRM);
+    EXCEPTION
+        WHEN ECHIPA_INEXISTENTA THEN
+            DBMS_OUTPUT.PUT_LINE('Eroare: ID-ul ' || id_echipa_cautata || ' nu corespunde niciunei echipe.');
+            RETURN NULL;
+    
+        WHEN NO_DATA_FOUND THEN
+            DBMS_OUTPUT.PUT_LINE('Eroare: Echipa exista, dar nu are niciun vehicul sau model asociat.');
+            RETURN NULL;
+    
+        WHEN TOO_MANY_ROWS THEN
+            DBMS_OUTPUT.PUT_LINE('Eroare: Exista mai multe modele diferite care ating aceeasi viteza maxima.');
+            RETURN NULL;
+    
+        WHEN OTHERS THEN
+            DBMS_OUTPUT.PUT_LINE('Eroare neprevazuta: ' || SQLERRM);
+            RETURN NULL;
 END;
 
-
 BEGIN
-    DBMS_OUTPUT.PUT_LINE('Model rapid: ' || model_cel_mai_rapid_echipa(1));
+    DBMS_OUTPUT.PUT_LINE('Model cel mai rapid: ' || f_model_cel_mai_rapid_echipa(1));
 END;
 
 BEGIN
-    DBMS_OUTPUT.PUT_LINE(model_cel_mai_rapid_echipa(9999));
+    DBMS_OUTPUT.PUT_LINE(f_model_cel_mai_rapid_echipa(9999));
 END; 
 
-INSERT INTO MODEL_VEHICUL_F1 VALUES (99, 'RB20-B', 'High Downforce', 350);
-INSERT INTO VEHICUL_F1 (id_echipa, id_model, greutate, pneuri, pret, data_inspectie)VALUES (1, 99, 798, 'Pirelli', 15000000, SYSDATE);
+
+INSERT INTO MODEL_VEHICUL_F1 VALUES (99, 'RB20', 'High Downforce', 350);
+INSERT INTO VEHICUL_F1 (id_echipa, id_model, greutate, pneuri, pret, data_inspectie) VALUES (1, 99, 798, 'Pirelli', 15000000, SYSDATE);
 
 BEGIN
-    DBMS_OUTPUT.PUT_LINE(model_cel_mai_rapid_echipa(1));
+    DBMS_OUTPUT.PUT_LINE(f_model_cel_mai_rapid_echipa(1));
 END;
 
 rollback;
 
+select * from model_vehicul_f1;
+select * from vehicul_f1;
+
 
 -- 9 
 
-CREATE OR REPLACE PROCEDURE PR_VENIT_ANUAL_PILOT (
+CREATE OR REPLACE PROCEDURE p_venit_anual_pilot (
     cod_pilot_intrare IN INT,
     an_ales           IN NUMBER
 ) IS
@@ -627,17 +639,17 @@ END;
 
 BEGIN
     DBMS_OUTPUT.PUT_LINE('--- Test 1: Succes (Date Valide) ---');
-    PR_VENIT_ANUAL_PILOT(1, 2025);
+    p_venit_anual_pilot(1, 2025);
 END;
 
 BEGIN
     DBMS_OUTPUT.PUT_LINE(CHR(10) || '--- Test 2: Pilot Inexistent ---');
-    PR_VENIT_ANUAL_PILOT(999, 2025);
+    p_venit_anual_pilot(999, 2025);
 END;
 
 BEGIN
     DBMS_OUTPUT.PUT_LINE(CHR(10) || '--- Test 3: An fara participare la curse ---');
-    PR_VENIT_ANUAL_PILOT(3, 2024);
+    p_venit_anual_pilot(3, 2024);
 END;
 
 -- 10
@@ -645,76 +657,66 @@ END;
 -- odata ce masinile intra in regim de calificare sau cursa, 
 -- echipele nu mai au voie sa faca modificari tehnice
 
-CREATE OR REPLACE TRIGGER trg_complex_control_parc_ferme
+
+CREATE OR REPLACE TRIGGER trg_restrictie_modificari_masini
 BEFORE INSERT OR UPDATE OR DELETE ON VEHICUL_F1
 DECLARE
-    v_status_cursa VARCHAR2(20);
-    v_nume_circuit VARCHAR2(100);
+    stare_cursa   VARCHAR(20); 
+    nume_circuit  VARCHAR(100);
 BEGIN
+    stare_cursa := 'Nicio Cursa';
+    nume_circuit := 'Nespecificat';
+
     BEGIN
-        SELECT c.status, cir.nume INTO v_status_cursa, v_nume_circuit
-        FROM CURSA_F1 c
-        JOIN CIRCUIT_F1 cir ON c.id_circuit = cir.id_circuit
-        WHERE TRUNC(c.data_cursa) = TRUNC(SYSDATE)
-        FETCH FIRST 1 ROW ONLY;
-    EXCEPTION
-        WHEN NO_DATA_FOUND THEN
-            v_status_cursa := 'Nicio Cursa';
+        SELECT C.status, CIR.nume  INTO stare_cursa, nume_circuit
+        FROM CURSA_F1 C
+        JOIN CIRCUIT_F1 CIR ON C.id_circuit = CIR.id_circuit
+        WHERE TRUNC(C.data_cursa) = TRUNC(SYSDATE)
+        AND ROWNUM = 1;
+        EXCEPTION
+            WHEN NO_DATA_FOUND THEN
+                NULL;
     END;
 
-    IF v_status_cursa IN ('In Progress', 'Suspended') THEN
-        RAISE_APPLICATION_ERROR(-20020, 'BLOCAJ CRITIC: Cursa de pe circuitul ' || v_nume_circuit || ' este activa. Nu se pot face modificari LMD asupra vehiculelor!');
-    ELSIF v_status_cursa = 'Planned' THEN
+    IF stare_cursa IN ('In Progress', 'Suspended') THEN
+        RAISE_APPLICATION_ERROR(-20020, 'BLOCAJ: Cursa de pe circuitul ' || nume_circuit || ' este ' || stare_cursa || '. Modificarile sunt interzise!');
+    ELSIF stare_cursa = 'Planned' THEN
         IF DELETING THEN
-            RAISE_APPLICATION_ERROR(-20021, 'STARE PRE-CURSA: Stergerea vehiculelor este interzisa in ziua evenimentului.');
+            RAISE_APPLICATION_ERROR(-20021, 'RESTRICTIE: Nu puteti sterge vehiculele in ziua cursei ' || nume_circuit);
         END IF;
-        DBMS_OUTPUT.PUT_LINE('Verificare efectuata: Actualizarile sunt permise inaintea cursei ' || v_nume_circuit);
+        DBMS_OUTPUT.PUT_LINE('Verificare: Actualizarile sunt permise pentru pregatirea cursei ' || nume_circuit);
+    
     ELSE
         DBMS_OUTPUT.PUT_LINE('Sistem deschis: Nu exista restrictii active pentru vehicule astazi.');
     END IF;
 END;
 
----------------------
-UPDATE CURSA_F1 
-SET data_cursa = SYSDATE 
-WHERE id_cursa = 4;
+INSERT INTO CURSA_F1 (id_cursa, id_circuit, tip_cursa, data_cursa, status) VALUES (99, 1, 'Grand Prix', SYSDATE, 'In Progress');
 
--- Pasul B: Încercăm să modificăm un vehicul (orice UPDATE)
 UPDATE VEHICUL_F1 
-SET greutate = 800 
+SET greutate = 850 
 WHERE id_vehicul = 1;
+-- REZULTAT: Eroare ORA-20020: "ALERTA: Modificarile sunt interzise! Cursa de pe Sakhir este In Progress
 
-rollback;
 
--------------------
-
--- Pasul A: Punem cursa 9 pe data de azi
 UPDATE CURSA_F1 
-SET data_cursa = SYSDATE, status = 'Planned' 
-WHERE id_cursa = 9;
+SET status = 'Planned' 
+WHERE id_cursa = 99;
 
--- Pasul B: Încercăm un DELETE (va eșua)
-DELETE FROM VEHICUL_F1 WHERE id_vehicul = 1;
--- REZULTAT: Eroare -20021: "STARE PRE-CURSA: Stergerea vehiculelor este interzisa..."
-
--- Pasul C: Încercăm un UPDATE (va reuși)
-UPDATE VEHICUL_F1 SET pneuri = 'Medium' WHERE id_vehicul = 1;
--- REZULTAT: "Verificare efectuata: Actualizarile sunt permise inaintea cursei Marina Bay...
-rollback;
-
--------------------
-
--- Pasul A: Mutăm toate cursele de pe data de azi (dacă am făcut testele de mai sus)
-UPDATE CURSA_F1 SET data_cursa = TO_DATE('2025-12-31', 'YYYY-MM-DD') 
-WHERE TRUNC(data_cursa) = TRUNC(SYSDATE);
-
--- Pasul B: Orice modificare pe vehicule
-UPDATE VEHICUL_F1 
-SET pret = pret + 1 
+DELETE FROM VEHICUL_F1 
 WHERE id_vehicul = 1;
--- REZULTAT: "Sistem deschis: Nu exista restrictii active pentru vehicule astazi."
+-- REZULTAT: Eroare ORA-20021: "STOP: Nu se pot elimina vehicule in ziua cursei programate la Sakhir"
 
-rollback;
+-- Marcăm cursa de azi ca fiind terminată 
+UPDATE CURSA_F1 
+SET status = 'Finished' 
+WHERE id_cursa = 99;
+
+UPDATE VEHICUL_F1 
+SET pneuri = 'Soft' 
+WHERE id_vehicul = 1;
+-- REZULTAT: "1 row updated." 
+-- Mesaj consolă: "Acces Liber: Nu sunt restrictii tehnice active astazi."
 
 -- 11
 
@@ -723,7 +725,7 @@ BEFORE INSERT OR UPDATE ON ISTORIC_ECHIPA_PILOT
 FOR EACH ROW
 BEGIN
     IF :NEW.data_final <= :NEW.data_inceput THEN
-        RAISE_APPLICATION_ERROR(-20002, 'Eroare: Data de final (' || TO_CHAR(:NEW.data_final, 'DD-MON-YYYY') || ') trebuie sA fie dupa data de inceput.');
+        RAISE_APPLICATION_ERROR(-20002, 'Eroare: Data de final (' || TO_CHAR(:NEW.data_final, 'DD-MON-YYYY') || ') trebuie sa fie dupa data de inceput.');
     END IF;
 
     IF :NEW.salariu < 500000 THEN
