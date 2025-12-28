@@ -680,10 +680,10 @@ BEGIN
     END;
 
     IF stare_cursa IN ('In Progress', 'Suspended') THEN
-        RAISE_APPLICATION_ERROR(-20020, 'BLOCAJ: Cursa de pe circuitul ' || nume_circuit || ' este ' || stare_cursa || '. Modificarile sunt interzise!');
+        RAISE_APPLICATION_ERROR(-20001, 'BLOCAJ: Cursa de pe circuitul ' || nume_circuit || ' este ' || stare_cursa || '. Modificarile sunt interzise!');
     ELSIF stare_cursa = 'Planned' THEN
         IF DELETING THEN
-            RAISE_APPLICATION_ERROR(-20021, 'RESTRICTIE: Nu puteti sterge vehiculele in ziua cursei ' || nume_circuit);
+            RAISE_APPLICATION_ERROR(-20002, 'RESTRICTIE: Nu puteti sterge vehiculele in ziua cursei ' || nume_circuit);
         END IF;
         DBMS_OUTPUT.PUT_LINE('Verificare: Actualizarile sunt permise pentru pregatirea cursei ' || nume_circuit);
     
@@ -721,20 +721,6 @@ WHERE id_vehicul = 1;
 
 -- 11
 
-CREATE OR REPLACE TRIGGER trg_validare_contract_pilot
-BEFORE INSERT OR UPDATE ON ISTORIC_ECHIPA_PILOT
-FOR EACH ROW
-BEGIN
-    IF :NEW.data_final <= :NEW.data_inceput THEN
-        RAISE_APPLICATION_ERROR(-20002, 'Eroare: Data de final (' || TO_CHAR(:NEW.data_final, 'DD-MON-YYYY') || ') trebuie sa fie dupa data de inceput.');
-    END IF;
-
-    IF :NEW.salariu < 500000 THEN
-        RAISE_APPLICATION_ERROR(-20003, 'Eroare: Salariul introdus (' || :NEW.salariu || ') este sub pragul minim permis in F1.');
-    END IF;
-END;
-
-
 ---
 
 CREATE OR REPLACE TRIGGER trg_control_vanzari_bilete
@@ -756,12 +742,12 @@ BEGIN
     WHERE id_tip_bilet = :NEW.id_tip_bilet;
 
     IF :NEW.stare = 'SOLD' AND stare_actuală_cursă IN ('Cancelled', 'Suspended', 'Finished') THEN
-        RAISE_APPLICATION_ERROR(-20300, 'EROARE VÂNZARE: Cursa de la ' || nume_traseu || 
+        RAISE_APPLICATION_ERROR(-20003, 'EROARE VÂNZARE: Cursa de la ' || nume_traseu || 
             ' este deja ' || stare_actuală_cursă || '. Nu se mai pot emite bilete!');
     END IF;
 
     IF tipul_evenimentului = 'Test Session' AND permite_pitstop = 'YES' THEN
-        RAISE_APPLICATION_ERROR(-20301, 'RESTRICȚIE SECURITATE: Accesul la pitstop este interzis în timpul sesiunilor de tip ' || tipul_evenimentului);
+        RAISE_APPLICATION_ERROR(-20004, 'RESTRICȚIE SECURITATE: Accesul la pitstop este interzis în timpul sesiunilor de tip ' || tipul_evenimentului);
     END IF;
 
     DBMS_OUTPUT.PUT_LINE('Bilet validat pentru circuitul: ' || nume_traseu);
@@ -771,154 +757,136 @@ END;
 ----
 ---
 
-CREATE OR REPLACE TRIGGER trg_integritate_tehnica_si_performanta
-BEFORE INSERT OR UPDATE ON PILOT_CURSA_F1
-FOR EACH ROW
-DECLARE
-    -- Variabile simple in romana, fara prefixe
-    moment_cursa       DATE;
-    moment_inspectie   DATE;
-    zone_drs           INT;
-    viteza_model       INT;
-    pilot_nume         VARCHAR2(100);
-    traseu_nume        VARCHAR2(100);
-    echipa_id          INT;
-BEGIN
-    -- 1. Preluam data cursei, numarul de zone DRS si numele circuitului [cite: 8, 13]
-    SELECT c.data_cursa, ct.drs_zone, ct.nume 
-    INTO moment_cursa, zone_drs, traseu_nume
-    FROM CURSA_F1 c
-    JOIN CIRCUIT_F1 ct ON c.id_circuit = ct.id_circuit
-    WHERE c.id_cursa = :NEW.id_cursa;
-
-    -- 2. Identificam echipa la care activeaza pilotul in momentul cursei [cite: 17]
-    SELECT id_echipa INTO echipa_id
-    FROM ISTORIC_ECHIPA_PILOT
-    WHERE id_pilot = :NEW.id_pilot 
-      AND moment_cursa BETWEEN data_inceput AND data_final;
-
-    -- 3. Preluam data ultimei inspectii si viteza modelului echipei respective [cite: 7, 12]
-    SELECT v.data_inspectie, m.viteza_maxima 
-    INTO moment_inspectie, viteza_model
-    FROM VEHICUL_F1 v
-    JOIN MODEL_VEHICUL_F1 m ON v.id_model = m.id_model
-    WHERE v.id_echipa = echipa_id;
-
-    -- 4. Preluam numele pilotului pentru eroare [cite: 11]
-    SELECT prenume || ' ' || nume INTO pilot_nume FROM PILOT_F1 WHERE id_pilot = :NEW.id_pilot;
-
-    -- REGULA 1: Verificarea valabilitatii inspectiei tehnice 
-    IF (moment_cursa - moment_inspectie) > 180 THEN
-        RAISE_APPLICATION_ERROR(-20800, 'REJECTAT: Masina pilotului ' || pilot_nume || 
-            ' are inspectia expirata de ' || ROUND(moment_cursa - moment_inspectie - 180) || ' zile!');
-    END IF;
-
-    -- REGULA 2: Compatibilitatea Aerodinamica (DRS vs Viteza) [cite: 7, 8]
-    IF zone_drs > 3 AND viteza_model < 350 THEN
-        RAISE_APPLICATION_ERROR(-20801, 'PERICOL: Circuitul ' || traseu_nume || 
-            ' are ' || zone_drs || ' zone DRS. Modelul echipei (' || viteza_model || 
-            ' km/h) este prea lent pentru acest traseu!');
-    END IF;
-
-    DBMS_OUTPUT.PUT_LINE('Validare Tehnica: Pilotul ' || pilot_nume || ' a primit unda verde pentru ' || traseu_nume);
-
-EXCEPTION
-    WHEN NO_DATA_FOUND THEN
-        RAISE_APPLICATION_ERROR(-20802, 'EROARE DATE: Pilotul sau vehiculul nu pot fi verificati in sistem.');
-END;
-/
-
 ----------------------
 
-CREATE OR REPLACE PACKAGE aux_contracte IS
-    -- Record pentru a retine numarul de contracte si un indicator de modificare
-    TYPE info_echipa IS RECORD(numar_contracte NUMBER, modificat NUMBER);
-    -- Colectie indexata dupa ID-ul echipei
-    TYPE lista_echipe IS TABLE OF info_echipa INDEX BY PLS_INTEGER;
+CREATE OR REPLACE PACKAGE pachet_contracte_active IS
+    -- Record pentru a retine numarul de piloti activi si un indicator de schimbare
+    TYPE info_echipa IS RECORD(numar_activ NUMBER, a_fost_modificat NUMBER);
+    TYPE colectie_active IS TABLE OF info_echipa INDEX BY PLS_INTEGER;
     
-    echipe lista_echipe;
+    inventar_active colectie_active;
 END;
 
-CREATE OR REPLACE TRIGGER trg_limita_contract_inceput
-BEFORE INSERT OR UPDATE OF id_echipa ON ISTORIC_ECHIPA_PILOT
+CREATE OR REPLACE TRIGGER trg_active_initializare
+BEFORE INSERT OR UPDATE OF id_echipa, data_inceput, data_final ON ISTORIC_ECHIPA_PILOT
 BEGIN
-    -- Curatam memoria pachetului
-    aux_contracte.echipe.DELETE;
+    -- Resetam memoria pachetului
+    pachet_contracte_active.inventar_active.DELETE;
     
-    -- Incarcam situatia actuala din tabel
-    FOR d IN (SELECT id_echipa, COUNT(*) as total 
+    -- Numaram doar contractele care sunt VALIDE astazi
+    FOR r IN (SELECT id_echipa, COUNT(*) as total 
               FROM ISTORIC_ECHIPA_PILOT 
+              WHERE TRUNC(SYSDATE) BETWEEN data_inceput AND data_final
               GROUP BY id_echipa) LOOP
-        aux_contracte.echipe(d.id_echipa).numar_contracte := d.total;
-        aux_contracte.echipe(d.id_echipa).modificat := 0;
+        pachet_contracte_active.inventar_active(r.id_echipa).numar_activ := r.total;
+        pachet_contracte_active.inventar_active(r.id_echipa).a_fost_modificat := 0;
     END LOOP;
 END;
 
-CREATE OR REPLACE TRIGGER trg_limita_contract_rand
-BEFORE INSERT OR UPDATE OF id_echipa ON ISTORIC_ECHIPA_PILOT
+
+CREATE OR REPLACE TRIGGER trg_active_verificare_linie
+BEFORE INSERT OR UPDATE OF id_echipa, data_inceput, data_final ON ISTORIC_ECHIPA_PILOT
 FOR EACH ROW
 BEGIN
-    -- Daca adaugam un pilot la o echipa
-    IF :NEW.id_echipa IS NOT NULL THEN
-        -- Initializam echipa in memorie daca nu exista deja
-        IF NOT aux_contracte.echipe.EXISTS(:NEW.id_echipa) THEN
-            aux_contracte.echipe(:NEW.id_echipa).numar_contracte := 0;
+    -- Verificam daca noul contract (sau cel modificat) este activ astazi
+    IF TRUNC(SYSDATE) BETWEEN :NEW.data_inceput AND :NEW.data_final THEN
+        
+        -- Initializam echipa in memorie daca nu exista
+        IF NOT pachet_contracte_active.inventar_active.EXISTS(:NEW.id_echipa) THEN
+            pachet_contracte_active.inventar_active(:NEW.id_echipa).numar_activ := 0;
         END IF;
 
-        -- Actualizam numarul in memorie si marcam modificarea
-        aux_contracte.echipe(:NEW.id_echipa).numar_contracte := aux_contracte.echipe(:NEW.id_echipa).numar_contracte + 1;
-        aux_contracte.echipe(:NEW.id_echipa).modificat := 1;
+        -- Incrementam numarul de piloti activi
+        pachet_contracte_active.inventar_active(:NEW.id_echipa).numar_activ := pachet_contracte_active.inventar_active(:NEW.id_echipa).numar_activ + 1;
+        pachet_contracte_active.inventar_active(:NEW.id_echipa).a_fost_modificat := 1;
 
-        -- Validare la inserare (operatiuni individuale)
-        IF INSERTING THEN
-            IF aux_contracte.echipe(:NEW.id_echipa).numar_contracte > 3 THEN
-                RAISE_APPLICATION_ERROR(-20333, 'LIMITA CONTRACTE: Echipa ' || :NEW.id_echipa || ' are deja 3 piloti!');
-            END IF;
+        -- Blocaj imediat daca se depaseste limita de 3 piloti activi
+        IF pachet_contracte_active.inventar_active(:NEW.id_echipa).numar_activ > 3 THEN
+            RAISE_APPLICATION_ERROR(-20005, 'LIMITA ATINSA: Echipa ' || :NEW.id_echipa || ' are deja 3 piloti ACTIVI astazi. Nu puteti adauga inca unul!');
         END IF;
     END IF;
 
-    -- Daca mutam un pilot la alta echipa (UPDATE), scadem din vechea echipa
-    IF UPDATING AND :OLD.id_echipa IS NOT NULL THEN
-        aux_contracte.echipe(:OLD.id_echipa).numar_contracte := aux_contracte.echipe(:OLD.id_echipa).numar_contracte - 1;
+    -- Daca modificam un contract care era activ, scadem din vechea echipa
+    IF UPDATING AND TRUNC(SYSDATE) BETWEEN :OLD.data_inceput AND :OLD.data_final THEN
+         IF pachet_contracte_active.inventar_active.EXISTS(:OLD.id_echipa) THEN
+            pachet_contracte_active.inventar_active(:OLD.id_echipa).numar_activ := pachet_contracte_active.inventar_active(:OLD.id_echipa).numar_activ - 1;
+         END IF;
     END IF;
 END;
 
-CREATE OR REPLACE TRIGGER trg_limita_contract_final
-AFTER UPDATE OF id_echipa ON ISTORIC_ECHIPA_PILOT
-DECLARE 
-    pozitie NUMBER;
+
+CREATE OR REPLACE TRIGGER trg_active_audit_final
+AFTER INSERT OR UPDATE OF id_echipa, data_inceput, data_final ON ISTORIC_ECHIPA_PILOT
+DECLARE
+    cheie NUMBER;
 BEGIN
-    pozitie := aux_contracte.echipe.FIRST;
+    cheie := pachet_contracte_active.inventar_active.FIRST;
     
-    -- Parcurgem toate echipele din pachet
-    WHILE pozitie IS NOT NULL LOOP
-        -- Daca echipa a fost implicata in update si a sarit de 3 piloti
-        IF aux_contracte.echipe(pozitie).modificat = 1 AND aux_contracte.echipe(pozitie).numar_contracte > 3 THEN
-            RAISE_APPLICATION_ERROR(-20334, 'EROARE GRILA: Dupa actualizare, echipa ' || pozitie || ' a ajuns la ' || aux_contracte.echipe(pozitie).numar_contracte || ' piloti inregistrati!');
+    WHILE cheie IS NOT NULL LOOP
+        IF pachet_contracte_active.inventar_active(cheie).a_fost_modificat = 1 AND pachet_contracte_active.inventar_active(cheie).numar_activ > 3 THEN
+            RAISE_APPLICATION_ERROR(-20006, 'REGULAMENT F1: In urma modificarilor, echipa ' || cheie || ' a ajuns la ' || pachet_contracte_active.inventar_active(cheie).numar_activ || ' piloti activi. Maximul permis este 3!');
         END IF;
         
-        pozitie := aux_contracte.echipe.NEXT(pozitie);
+        cheie := pachet_contracte_active.inventar_active.NEXT(cheie);
     END LOOP;
 END;
 
 
 -- 12
 
-CREATE TABLE AUDIT_F1 (
-    utilizator   VARCHAR(30),
-    nume_bd      VARCHAR(50),
-    eveniment    VARCHAR(20),
-    nume_obiect  VARCHAR(30),
-    data_log     DATE
+CREATE TABLE AUDIT_LDD_F1 (
+    id_audit       NUMBER GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    utilizator     VARCHAR(50),
+    eveniment      VARCHAR(50),
+    tip_obiect     VARCHAR(50),
+    nume_obiect    VARCHAR(100),
+    data_ora       DATE,
+    status         VARCHAR(20)
 );
 
-CREATE OR REPLACE TRIGGER trig_audit_ldd_f1
-AFTER CREATE OR DROP OR ALTER ON SCHEMA
+CREATE OR REPLACE PROCEDURE logheaza_eveniment_ldd (
+    nume_utilizator VARCHAR2, 
+    tip_ev          VARCHAR2, 
+    tip_obj         VARCHAR2, 
+    nume_obj        VARCHAR2, 
+    stare           VARCHAR2
+) 
+IS
+    PRAGMA AUTONOMOUS_TRANSACTION;
 BEGIN
-    INSERT INTO AUDIT_F1
-    VALUES (SYS.LOGIN_USER, SYS.DATABASE_NAME, SYS.SYSEVENT, SYS.DICTIONARY_OBJ_NAME, SYSDATE);
+    INSERT INTO AUDIT_LDD_F1 (utilizator, eveniment, tip_obiect, nume_obiect, data_ora, status) VALUES (nume_utilizator, tip_ev, tip_obj, nume_obj, SYSDATE, stare);
+    COMMIT;
 END;
 
+CREATE OR REPLACE TRIGGER trg_control_si_audit_f1
+BEFORE CREATE OR ALTER OR DROP ON SCHEMA
+DECLARE
+    eveniment      VARCHAR(50);
+    nume_obiect    VARCHAR(100);
+    tip_obiect     VARCHAR(50);
+    utilizator     VARCHAR(50);
+BEGIN
+    eveniment   := SYSEVENT;
+    nume_obiect := SYS.DICTIONARY_OBJ_NAME;
+    tip_obiect  := SYS.DICTIONARY_OBJ_TYPE;
+    utilizator  := SYS.LOGIN_USER;
+
+    IF eveniment = 'CREATE' AND tip_obiect = 'TABLE' THEN
+        IF UPPER(nume_obiect) NOT LIKE '%_F1' THEN
+            logheaza_eveniment_ldd(utilizator, eveniment, tip_obiect, nume_obiect, 'BLOCAT (NUME)');
+            RAISE_APPLICATION_ERROR(-20007, 'EROARE: Numele tabelului trebuie sa se termine in _F1!');
+        END IF;
+    END IF;
+
+    IF eveniment = 'DROP' AND tip_obiect = 'TABLE' THEN
+        IF UPPER(nume_obiect) LIKE '%_F1' THEN
+            logheaza_eveniment_ldd(utilizator, eveniment, tip_obiect, nume_obiect, 'BLOCAT (DROP)');
+            RAISE_APPLICATION_ERROR(-20008, 'SECURITATE: Stergerea tabelelor oficiale F1 este interzisa!');
+        END IF;
+    END IF;
+
+    logheaza_eveniment_ldd(utilizator, eveniment, tip_obiect, nume_obiect, 'REUSIT');
+END;
 
 -- 13
 
