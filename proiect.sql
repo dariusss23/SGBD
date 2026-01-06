@@ -5,7 +5,7 @@ DROP TABLE ECHIPA_SPONSOR_F1;
 DROP TABLE BILET_F1;
 DROP TABLE CURSA_F1;
 DROP TABLE VEHICUL_F1;
-DROP TABLE ISTORIC_ECHIPA_PILOT;
+DROP TABLE ISTORIC_ECHIPA_PILOT_F1;
 DROP TABLE PILOT_F1;
 DROP TABLE ECHIPA_F1;
 DROP TABLE TIP_BILET_F1;
@@ -58,7 +58,7 @@ CREATE TABLE CIRCUIT_F1 (
 
 CREATE TABLE TIP_BILET_F1 (
     id_tip_bilet INT PRIMARY KEY,
-    categorie VARCHAR(50),
+    categorie VARCHAR(50) CHECK (categorie IN ('Bronze', 'Silver', 'Gold', 'Platinum', 'VIP', 'Exclusive')),
     acces_pitstop CHAR(3) CHECK (acces_pitstop IN ('YES', 'NO'))
 );
 
@@ -151,7 +151,7 @@ CREATE TABLE PILOT_CURSA_F1 (
 );
 
 
-CREATE TABLE ISTORIC_ECHIPA_PILOT (
+CREATE TABLE ISTORIC_ECHIPA_PILOT_F1 (
     id_contract INT PRIMARY KEY,
     id_echipa INT NOT NULL,
     id_pilot INT NOT NULL,
@@ -257,29 +257,29 @@ INSERT INTO PILOT_F1 VALUES (pilot_seq.NEXTVAL, 'Magnussen', 'Kevin', TO_DATE('1
 select * from pilot_f1;
 
 
-INSERT INTO ISTORIC_ECHIPA_PILOT VALUES (101, 1, 1,  TO_DATE('2025-01-01', 'YYYY-MM-DD'), TO_DATE('2029-01-01', 'YYYY-MM-DD'), 48200000);
-INSERT INTO ISTORIC_ECHIPA_PILOT VALUES (102, 1, 2,  TO_DATE('2025-01-04', 'YYYY-MM-DD'), TO_DATE('2029-01-04', 'YYYY-MM-DD'), 15700000);
-INSERT INTO ISTORIC_ECHIPA_PILOT VALUES (105, 2, 5,  TO_DATE('2025-01-08', 'YYYY-MM-DD'), TO_DATE('2028-01-08', 'YYYY-MM-DD'), 39100000);
-INSERT INTO ISTORIC_ECHIPA_PILOT VALUES (106, 2, 6,  TO_DATE('2025-01-11', 'YYYY-MM-DD'), TO_DATE('2029-01-11', 'YYYY-MM-DD'), 7200000);
-INSERT INTO ISTORIC_ECHIPA_PILOT VALUES (103, 3, 3,  TO_DATE('2025-01-15', 'YYYY-MM-DD'), TO_DATE('2029-01-15', 'YYYY-MM-DD'), 26400000);
-INSERT INTO ISTORIC_ECHIPA_PILOT VALUES (104, 3, 4,  TO_DATE('2025-01-18', 'YYYY-MM-DD'), TO_DATE('2028-01-18', 'YYYY-MM-DD'), 13200000);
-INSERT INTO ISTORIC_ECHIPA_PILOT VALUES (107, 4, 7,  TO_DATE('2025-01-22', 'YYYY-MM-DD'), TO_DATE('2028-01-22', 'YYYY-MM-DD'), 21800000);
-INSERT INTO ISTORIC_ECHIPA_PILOT VALUES (108, 4, 8,  TO_DATE('2025-01-25', 'YYYY-MM-DD'), TO_DATE('2029-01-25', 'YYYY-MM-DD'), 5800000);
-INSERT INTO ISTORIC_ECHIPA_PILOT VALUES (109, 5, 9,  TO_DATE('2025-01-29', 'YYYY-MM-DD'), TO_DATE('2029-01-29', 'YYYY-MM-DD'), 19400000);
-INSERT INTO ISTORIC_ECHIPA_PILOT VALUES (110, 5, 10, TO_DATE('2025-02-01', 'YYYY-MM-DD'), TO_DATE('2028-02-01', 'YYYY-MM-DD'), 3000000);
-INSERT INTO ISTORIC_ECHIPA_PILOT VALUES (111, 6, 11, TO_DATE('2025-02-05', 'YYYY-MM-DD'), TO_DATE('2029-02-05', 'YYYY-MM-DD'), 5300000);
-INSERT INTO ISTORIC_ECHIPA_PILOT VALUES (112, 6, 12, TO_DATE('2025-02-08', 'YYYY-MM-DD'), TO_DATE('2028-02-08', 'YYYY-MM-DD'), 7400000);
-INSERT INTO ISTORIC_ECHIPA_PILOT VALUES (113, 7, 13, TO_DATE('2025-02-12', 'YYYY-MM-DD'), TO_DATE('2028-02-12', 'YYYY-MM-DD'), 4200000);
-INSERT INTO ISTORIC_ECHIPA_PILOT VALUES (114, 7, 14, TO_DATE('2025-02-15', 'YYYY-MM-DD'), TO_DATE('2029-02-15', 'YYYY-MM-DD'), 1900000);
-INSERT INTO ISTORIC_ECHIPA_PILOT VALUES (115, 8, 15, TO_DATE('2025-02-19', 'YYYY-MM-DD'), TO_DATE('2028-02-19', 'YYYY-MM-DD'), 8600000);
-INSERT INTO ISTORIC_ECHIPA_PILOT VALUES (116, 8, 16, TO_DATE('2025-02-22', 'YYYY-MM-DD'), TO_DATE('2029-02-22', 'YYYY-MM-DD'), 2700000);
-INSERT INTO ISTORIC_ECHIPA_PILOT VALUES (117, 9, 17, TO_DATE('2025-02-26', 'YYYY-MM-DD'), TO_DATE('2028-02-26', 'YYYY-MM-DD'), 11800000);
-INSERT INTO ISTORIC_ECHIPA_PILOT VALUES (118, 9, 18, TO_DATE('2025-03-01', 'YYYY-MM-DD'), TO_DATE('2029-03-01', 'YYYY-MM-DD'), 3400000);
-INSERT INTO ISTORIC_ECHIPA_PILOT VALUES (119, 10, 19, TO_DATE('2025-03-05', 'YYYY-MM-DD'), TO_DATE('2028-03-05', 'YYYY-MM-DD'), 5600000);
-INSERT INTO ISTORIC_ECHIPA_PILOT VALUES (120, 10, 20, TO_DATE('2025-03-08', 'YYYY-MM-DD'), TO_DATE('2029-03-08', 'YYYY-MM-DD'), 9100000);
+INSERT INTO ISTORIC_ECHIPA_PILOT_F1 VALUES (contract_seq.NEXTVAL, 1, 1,  TO_DATE('2025-01-01', 'YYYY-MM-DD'), TO_DATE('2029-01-01', 'YYYY-MM-DD'), 48200000);
+INSERT INTO ISTORIC_ECHIPA_PILOT_F1 VALUES (contract_seq.NEXTVAL, 1, 2,  TO_DATE('2025-01-04', 'YYYY-MM-DD'), TO_DATE('2029-01-04', 'YYYY-MM-DD'), 15700000);
+INSERT INTO ISTORIC_ECHIPA_PILOT_F1 VALUES (contract_seq.NEXTVAL, 2, 5,  TO_DATE('2025-01-08', 'YYYY-MM-DD'), TO_DATE('2028-01-08', 'YYYY-MM-DD'), 39100000);
+INSERT INTO ISTORIC_ECHIPA_PILOT_F1 VALUES (contract_seq.NEXTVAL, 2, 6,  TO_DATE('2025-01-11', 'YYYY-MM-DD'), TO_DATE('2029-01-11', 'YYYY-MM-DD'), 7200000);
+INSERT INTO ISTORIC_ECHIPA_PILOT_F1 VALUES (contract_seq.NEXTVAL, 3, 3,  TO_DATE('2025-01-15', 'YYYY-MM-DD'), TO_DATE('2029-01-15', 'YYYY-MM-DD'), 26400000);
+INSERT INTO ISTORIC_ECHIPA_PILOT_F1 VALUES (contract_seq.NEXTVAL, 3, 4,  TO_DATE('2025-01-18', 'YYYY-MM-DD'), TO_DATE('2028-01-18', 'YYYY-MM-DD'), 13200000);
+INSERT INTO ISTORIC_ECHIPA_PILOT_F1 VALUES (contract_seq.NEXTVAL, 4, 7,  TO_DATE('2025-01-22', 'YYYY-MM-DD'), TO_DATE('2028-01-22', 'YYYY-MM-DD'), 21800000);
+INSERT INTO ISTORIC_ECHIPA_PILOT_F1 VALUES (contract_seq.NEXTVAL, 4, 8,  TO_DATE('2025-01-25', 'YYYY-MM-DD'), TO_DATE('2029-01-25', 'YYYY-MM-DD'), 5800000);
+INSERT INTO ISTORIC_ECHIPA_PILOT_F1 VALUES (contract_seq.NEXTVAL, 5, 9,  TO_DATE('2025-01-29', 'YYYY-MM-DD'), TO_DATE('2029-01-29', 'YYYY-MM-DD'), 19400000);
+INSERT INTO ISTORIC_ECHIPA_PILOT_F1 VALUES (contract_seq.NEXTVAL, 5, 10, TO_DATE('2025-02-01', 'YYYY-MM-DD'), TO_DATE('2028-02-01', 'YYYY-MM-DD'), 3000000);
+INSERT INTO ISTORIC_ECHIPA_PILOT_F1 VALUES (contract_seq.NEXTVAL, 6, 11, TO_DATE('2025-02-05', 'YYYY-MM-DD'), TO_DATE('2029-02-05', 'YYYY-MM-DD'), 5300000);
+INSERT INTO ISTORIC_ECHIPA_PILOT_F1 VALUES (contract_seq.NEXTVAL, 6, 12, TO_DATE('2025-02-08', 'YYYY-MM-DD'), TO_DATE('2028-02-08', 'YYYY-MM-DD'), 7400000);
+INSERT INTO ISTORIC_ECHIPA_PILOT_F1 VALUES (contract_seq.NEXTVAL, 7, 13, TO_DATE('2025-02-12', 'YYYY-MM-DD'), TO_DATE('2028-02-12', 'YYYY-MM-DD'), 4200000);
+INSERT INTO ISTORIC_ECHIPA_PILOT_F1 VALUES (contract_seq.NEXTVAL, 7, 14, TO_DATE('2025-02-15', 'YYYY-MM-DD'), TO_DATE('2029-02-15', 'YYYY-MM-DD'), 1900000);
+INSERT INTO ISTORIC_ECHIPA_PILOT_F1 VALUES (contract_seq.NEXTVAL, 8, 15, TO_DATE('2025-02-19', 'YYYY-MM-DD'), TO_DATE('2028-02-19', 'YYYY-MM-DD'), 8600000);
+INSERT INTO ISTORIC_ECHIPA_PILOT_F1 VALUES (contract_seq.NEXTVAL, 8, 16, TO_DATE('2025-02-22', 'YYYY-MM-DD'), TO_DATE('2029-02-22', 'YYYY-MM-DD'), 2700000);
+INSERT INTO ISTORIC_ECHIPA_PILOT_F1 VALUES (contract_seq.NEXTVAL, 9, 17, TO_DATE('2025-02-26', 'YYYY-MM-DD'), TO_DATE('2028-02-26', 'YYYY-MM-DD'), 11800000);
+INSERT INTO ISTORIC_ECHIPA_PILOT_F1 VALUES (contract_seq.NEXTVAL, 9, 18, TO_DATE('2025-03-01', 'YYYY-MM-DD'), TO_DATE('2029-03-01', 'YYYY-MM-DD'), 3400000);
+INSERT INTO ISTORIC_ECHIPA_PILOT_F1 VALUES (contract_seq.NEXTVAL, 10, 19, TO_DATE('2025-03-05', 'YYYY-MM-DD'), TO_DATE('2028-03-05', 'YYYY-MM-DD'), 5600000);
+INSERT INTO ISTORIC_ECHIPA_PILOT_F1 VALUES (contract_seq.NEXTVAL, 10, 20, TO_DATE('2025-03-08', 'YYYY-MM-DD'), TO_DATE('2029-03-08', 'YYYY-MM-DD'), 9100000);
 
 
-select * from istoric_echipa_pilot;
+select * from ISTORIC_ECHIPA_PILOT_F1;
 
 
 INSERT INTO VEHICUL_F1 (id_echipa, id_model, greutate, pneuri, pret, data_inspectie)  VALUES (1, 1, 794, 'Pirelli', 15500000.00, TO_DATE('2025-01-12', 'YYYY-MM-DD'));
@@ -356,14 +356,15 @@ select * from pilot_cursa_f1;
 
 
 
----------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------
 
 
 -- 6
 
--- Sa se realizeze o procedura care analizeaza ultimele cinci echipe infiintate, 
--- utilizand un Varray pentru nume, un tabel imbricat pentru bugete si un tabel indexat
--- pentru numarul de sponsori activi, cu scopul de a genera un raport de sustenabilitate comerciala.
+-- Conducerea campionatului de Formula 1 doreste o situatie financiara si administrativa a celor mai noi echipe intrate in competitie. 
+-- Sa se realizeze o procedura care identifica cele mai noi 5 echipe infiintate si genereaza un raport cu numele, bugetul si numarul sponsorilor activi (status 'YES') ai acestora. 
+-- Pentru o procesare eficienta, datele sunt gestionate folosind trei tipuri de colectii: VARRAY, tabele imbricate si tablouri asociative.
+
 
 CREATE OR REPLACE PROCEDURE p_analiza_echipe IS
     TYPE varray_echipe IS VARRAY(5) OF VARCHAR(100);
@@ -413,6 +414,7 @@ END;
 
 
 -- 7
+
 -- Departamentul administrativ al FIA doreste monitorizarea situatiei contractuale a pilotilor din campionatul curent. 
 -- Pentru o organizare eficienta, este necesara vizualizarea pilotilor grupati in functie de echipa la care sunt legitimati.
 -- Sa se realizeze un subprogram stocat independent (procedura) care sa genereze un raport al contractelor active. 
@@ -422,14 +424,14 @@ CREATE OR REPLACE PROCEDURE p_raport_piloti_activi IS
     CURSOR cursor_piloti_activi (id_echipa_importata NUMBER) 
     IS
         SELECT P.nume, P.prenume, I.salariu, I.data_final
-        FROM ISTORIC_ECHIPA_PILOT I
+        FROM ISTORIC_ECHIPA_PILOT_F1 I
         JOIN PILOT_F1 P ON I.id_pilot = P.id_pilot
         WHERE I.id_echipa = id_echipa_importata AND I.data_final >= SYSDATE;
 
     nume_pilot      PILOT_F1.nume%TYPE;
     prenume_pilot   PILOT_F1.prenume%TYPE;
-    salariu_angajat ISTORIC_ECHIPA_PILOT.salariu%TYPE;
-    data_expirare   ISTORIC_ECHIPA_PILOT.data_final%TYPE;
+    salariu_angajat ISTORIC_ECHIPA_PILOT_F1.salariu%TYPE;
+    data_expirare   ISTORIC_ECHIPA_PILOT_F1.data_final%TYPE;
 
 BEGIN
     DBMS_OUTPUT.PUT_LINE('=== PILOTI CU CONTRACTE ACTIVE ===');
@@ -464,10 +466,11 @@ END;
 
 -- 8
 
--- Mecanicii fiecarei echipe au nevoie de o metoda rapida pentru a identifica modelul de maasina care detine recordul de viteza din garajul lor 
--- Se va realiza o functie care primeste codul echipei si returneaza denumirea celui mai rapid model, interogand simultan tabelele ECHIPA_F1, VEHICUL_F1 si MODEL_VEHICUL_F1 
--- Inspectorii tehnici vor folosi acest subprogram pentru a valida datele, functia gestionand exceptiile pentru coduri de echipa inexistente, 
--- lipsa mașinilor din inventar sau existenta mai multor modele cu aceeasi viteza maxima.
+-- Mecanicii fiecarei echipe au nevoie de o metoda rapida pentru a identifica modelul de masina care detine recordul de viteza din garajul lor. 
+-- Se va realiza o functie care primeste codul echipei si returneaza denumirea celui mai rapid model, interogand simultan tabelele ECHIPA_F1, VEHICUL_F1 si MODEL_VEHICUL_F1. 
+-- Inspectorii tehnici vor folosi acest subprogram pentru a valida datele, functia gestionand exceptiile pentru coduri de echipa inexistente, lipsa masinilor din inventar 
+-- sau existenta mai multor modele cu aceeasi viteza maxima.
+
 
 CREATE OR REPLACE FUNCTION f_model_cel_mai_rapid_echipa (
     id_echipa_cautata IN NUMBER
@@ -518,29 +521,49 @@ BEGIN
             RETURN NULL;
 END;
 
+
+-- CAZUL 1: Succes (ID valid care are vehicule)
 BEGIN
     DBMS_OUTPUT.PUT_LINE('Model cel mai rapid: ' || f_model_cel_mai_rapid_echipa(1));
-END;
-
-BEGIN
-    DBMS_OUTPUT.PUT_LINE(f_model_cel_mai_rapid_echipa(9999));
 END; 
 
-
-INSERT INTO MODEL_VEHICUL_F1 VALUES (99, 'RB20', 'High Downforce', 350);
-INSERT INTO VEHICUL_F1 (id_echipa, id_model, greutate, pneuri, pret, data_inspectie) VALUES (1, 99, 798, 'Pirelli', 15000000, SYSDATE);
-
+-- CAZUL 2: Echipa nu exista (Declanseaza ECHIPA_INEXISTENTA)
 BEGIN
-    DBMS_OUTPUT.PUT_LINE(f_model_cel_mai_rapid_echipa(1));
+    DBMS_OUTPUT.PUT_LINE('Rezultat ID inexistent: ' || f_model_cel_mai_rapid_echipa(9999));
 END;
 
-rollback;
+-- CAZUL 3: Echipa exista, dar nu are vehicule (Declansează NO_DATA_FOUND)
+INSERT INTO ECHIPA_F1 (id_echipa, nume, an_infiintare, buget) VALUES (99, 'Echipa Test Fara Masini', 2025, 0);
 
-select * from model_vehicul_f1;
-select * from vehicul_f1;
+BEGIN
+    DBMS_OUTPUT.PUT_LINE('Rezultat: ' || f_model_cel_mai_rapid_echipa(99));
+END;
+
+DELETE FROM ECHIPA_F1
+WHERE id_echipa = 99;
+
+-- CAZUL 4: Mai multe modele au aceeasi viteza maxima (Declanseaza TOO_MANY_ROWS)
+
+INSERT INTO MODEL_VEHICUL_F1 (id_model, nume, viteza_maxima) VALUES (888, 'Model Duplicat Test', 370);
+INSERT INTO VEHICUL_F1 (id_vehicul, id_echipa, id_model) VALUES (888, 2, 888);
+
+UPDATE MODEL_VEHICUL_F1 
+SET viteza_maxima = 370 
+WHERE id_model = (SELECT id_model FROM VEHICUL_F1 WHERE id_echipa = 2 FETCH FIRST 1 ROW ONLY);
+
+BEGIN
+    DBMS_OUTPUT.PUT_LINE('Rezultat viteze identice: ' || f_model_cel_mai_rapid_echipa(2));
+END;
+
+DELETE FROM MODEL_VEHICUL_F1
+WHERE id_model = 888;
+
+DELETE FROM VEHICUL_F1
+WHERE id_vehicul = 888;
 
 
 -- 9 
+
 
 CREATE OR REPLACE PROCEDURE p_venit_anual_pilot (
     cod_pilot_intrare IN NUMBER,
@@ -577,7 +600,7 @@ BEGIN
     END IF;
 
     SELECT COUNT(*) INTO numar_verificare
-    FROM ISTORIC_ECHIPA_PILOT
+    FROM ISTORIC_ECHIPA_PILOT_F1
     WHERE id_pilot = cod_pilot_intrare AND an_ales BETWEEN EXTRACT(YEAR FROM data_inceput) AND EXTRACT(YEAR FROM data_final);
 
     IF numar_verificare = 0 THEN
@@ -598,7 +621,7 @@ BEGIN
         )
     INTO suma_totala_calculata
     FROM PILOT_F1 P
-    JOIN ISTORIC_ECHIPA_PILOT H ON P.id_pilot = H.id_pilot
+    JOIN ISTORIC_ECHIPA_PILOT_F1 H ON P.id_pilot = H.id_pilot
     JOIN (
             SELECT DISTINCT id_echipa, id_sponsor, contributie_financiara
             FROM ECHIPA_SPONSOR_F1
@@ -651,11 +674,7 @@ BEGIN
 END;
 
 
-
 -- 10
-
--- odata ce masinile intra in regim de calificare sau cursa, 
--- echipele nu mai au voie sa faca modificari tehnice
 
 
 CREATE OR REPLACE TRIGGER trg_restrictie_modificari_masini
@@ -692,71 +711,38 @@ BEGIN
     END IF;
 END;
 
+
+-- REZULTAT: Eroare ORA-20001: "BLOCAJ"
 INSERT INTO CURSA_F1 (id_cursa, id_circuit, tip_cursa, data_cursa, status) VALUES (99, 1, 'Grand Prix', SYSDATE, 'In Progress');
 
 UPDATE VEHICUL_F1 
 SET greutate = 850 
 WHERE id_vehicul = 1;
--- REZULTAT: Eroare ORA-20020: "ALERTA: Modificarile sunt interzise! Cursa de pe Sakhir este In Progress
 
 
+-- REZULTAT: Eroare ORA-20002: "RESTRICTIE"
 UPDATE CURSA_F1 
 SET status = 'Planned' 
 WHERE id_cursa = 99;
 
 DELETE FROM VEHICUL_F1 
 WHERE id_vehicul = 1;
--- REZULTAT: Eroare ORA-20021: "STOP: Nu se pot elimina vehicule in ziua cursei programate la Sakhir"
 
--- Marcăm cursa de azi ca fiind terminată 
+-- REZULTAT : SUCCES
 UPDATE CURSA_F1 
 SET status = 'Finished' 
 WHERE id_cursa = 99;
 
 UPDATE VEHICUL_F1 
-SET pneuri = 'Soft' 
+SET pneuri = 'Pirelli' 
 WHERE id_vehicul = 1;
--- REZULTAT: "1 row updated." 
--- Mesaj consolă: "Acces Liber: Nu sunt restrictii tehnice active astazi."
+
+DELETE FROM CURSA_F1
+WHERE id_cursa = 99;
+
 
 -- 11
 
----
-
-CREATE OR REPLACE TRIGGER trg_control_vanzari_bilete
-BEFORE INSERT OR UPDATE ON BILET_F1
-FOR EACH ROW
-DECLARE
-    stare_actuală_cursă  VARCHAR2(20);
-    tipul_evenimentului  VARCHAR2(50);
-    nume_traseu          VARCHAR2(100);
-    permite_pitstop      VARCHAR2(3);
-BEGIN
-    SELECT c.status, c.tip_cursa, cir.nume  INTO stare_actuală_cursă, tipul_evenimentului, nume_traseu
-    FROM CURSA_F1 c
-    JOIN CIRCUIT_F1 cir ON c.id_circuit = cir.id_circuit
-    WHERE c.id_cursa = :NEW.id_cursa;
-
-    SELECT acces_pitstop INTO permite_pitstop
-    FROM TIP_BILET_F1
-    WHERE id_tip_bilet = :NEW.id_tip_bilet;
-
-    IF :NEW.stare = 'SOLD' AND stare_actuală_cursă IN ('Cancelled', 'Suspended', 'Finished') THEN
-        RAISE_APPLICATION_ERROR(-20003, 'EROARE VÂNZARE: Cursa de la ' || nume_traseu || ' este deja ' || stare_actuală_cursă || '. Nu se mai pot emite bilete!');
-    END IF;
-
-    IF tipul_evenimentului = 'Test Session' AND permite_pitstop = 'YES' THEN
-        RAISE_APPLICATION_ERROR(-20004, 'RESTRICȚIE SECURITATE: Accesul la pitstop este interzis în timpul sesiunilor de tip ' || tipul_evenimentului);
-    END IF;
-
-    DBMS_OUTPUT.PUT_LINE('Bilet validat pentru circuitul: ' || nume_traseu);
-END;
-
-
-----
----
-
-----------------------
 
 CREATE OR REPLACE PACKAGE pachet_limitare_piloti IS
     TYPE colectie_echipe IS TABLE OF NUMBER INDEX BY PLS_INTEGER;
@@ -764,16 +750,14 @@ CREATE OR REPLACE PACKAGE pachet_limitare_piloti IS
 END;
 
 CREATE OR REPLACE TRIGGER trg_init_inventar
-BEFORE INSERT OR UPDATE ON ISTORIC_ECHIPA_PILOT
+BEFORE INSERT OR UPDATE ON ISTORIC_ECHIPA_PILOT_F1
 BEGIN
-    -- Curățăm memoria pachetului
     pachet_limitare_piloti.inventar_echipe.DELETE;
 
-    -- Încărcăm situația actuală a tuturor echipelor
     FOR rand IN (
         SELECT id_echipa, COUNT(*) as total 
-        FROM ISTORIC_ECHIPA_PILOT 
-        WHERE TRUNC(SYSDATE) BETWEEN data_inceput AND data_final
+        FROM ISTORIC_ECHIPA_PILOT_F1 
+        WHERE TRUNC(SYSDATE) BETWEEN TRUNC(data_inceput) AND TRUNC(data_final)
         GROUP BY id_echipa
     ) LOOP
         pachet_limitare_piloti.inventar_echipe(rand.id_echipa) := rand.total;
@@ -782,24 +766,21 @@ END;
 
 
 CREATE OR REPLACE TRIGGER trg_ajustare_linie
-BEFORE INSERT OR UPDATE OF id_echipa, data_inceput, data_final ON ISTORIC_ECHIPA_PILOT
+BEFORE INSERT OR UPDATE OF id_echipa, data_inceput, data_final ON ISTORIC_ECHIPA_PILOT_F1
 FOR EACH ROW
 DECLARE
     echipa_noua   NUMBER := :NEW.id_echipa;
     echipa_veche  NUMBER := :OLD.id_echipa;
 BEGIN
-    -- 1. Dacă este UPDATE, scădem pilotul din echipa veche (dacă era activ)
     IF UPDATING THEN
-        IF TRUNC(SYSDATE) BETWEEN :OLD.data_inceput AND :OLD.data_final THEN
+        IF TRUNC(SYSDATE) BETWEEN TRUNC(:OLD.data_inceput) AND TRUNC(:OLD.data_final) THEN
             IF pachet_limitare_piloti.inventar_echipe.EXISTS(echipa_veche) THEN
                 pachet_limitare_piloti.inventar_echipe(echipa_veche) := pachet_limitare_piloti.inventar_echipe(echipa_veche) - 1;
             END IF;
         END IF;
     END IF;
 
-    -- 2. Adăugăm pilotul în noua echipă (dacă va fi activ)
-    IF TRUNC(SYSDATE) BETWEEN :NEW.data_inceput AND :NEW.data_final THEN
-        -- Inițializăm echipa dacă nu există în memorie
+    IF TRUNC(SYSDATE) BETWEEN TRUNC(:NEW.data_inceput) AND TRUNC(:NEW.data_final) THEN
         IF NOT pachet_limitare_piloti.inventar_echipe.EXISTS(echipa_noua) THEN
             pachet_limitare_piloti.inventar_echipe(echipa_noua) := 0;
         END IF;
@@ -810,7 +791,7 @@ END;
 
 
 CREATE OR REPLACE TRIGGER trg_validare_limita
-AFTER INSERT OR UPDATE ON ISTORIC_ECHIPA_PILOT
+AFTER INSERT OR UPDATE ON ISTORIC_ECHIPA_PILOT_F1
 DECLARE
     cheie_echipa  NUMBER;
 BEGIN
@@ -818,8 +799,7 @@ BEGIN
 
     WHILE cheie_echipa IS NOT NULL LOOP
         IF pachet_limitare_piloti.inventar_echipe(cheie_echipa) > 3 THEN
-            RAISE_APPLICATION_ERROR(-20005, 'LIMITA DEPASITA: Echipa ' || cheie_echipa || 
-                ' are ' || pachet_limitare_piloti.inventar_echipe(cheie_echipa) || ' piloti activi!');
+            RAISE_APPLICATION_ERROR(-20005, 'LIMITA DEPASITA: Echipa ' || cheie_echipa || ' are ' || pachet_limitare_piloti.inventar_echipe(cheie_echipa) || ' piloti activi!');
         END IF;
         
         cheie_echipa := pachet_limitare_piloti.inventar_echipe.NEXT(cheie_echipa);
@@ -827,8 +807,16 @@ BEGIN
 END;
 
 
+INSERT INTO PILOT_F1 VALUES (100, 'SGBD', 'EXAMEN', TO_DATE('1900-04-23', 'YYYY-MM-DD'), 'ROU', 6000, 10);
+INSERT INTO PILOT_F1 VALUES (101, 'SESIUNE', 'NOTA_10', TO_DATE('1900-04-23', 'YYYY-MM-DD'), 'ROU', 1000, 3);
+INSERT INTO ISTORIC_ECHIPA_PILOT_F1 (id_contract, id_echipa, id_pilot, data_inceput, data_final, salariu) VALUES (830, 1, 100, SYSDATE - 2, SYSDATE + 20, 700000);
+INSERT INTO ISTORIC_ECHIPA_PILOT_F1 (id_contract, id_echipa, id_pilot, data_inceput, data_final, salariu) VALUES (831, 1, 101, SYSDATE - 2, SYSDATE + 20, 700000);
+
 
 -- 12
+
+
+DROP TABLE AUDIT_LDD_F1;
 
 CREATE TABLE AUDIT_LDD_F1 (
     id_audit       NUMBER GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
@@ -840,7 +828,7 @@ CREATE TABLE AUDIT_LDD_F1 (
     status         VARCHAR(20)
 );
 
-CREATE OR REPLACE PROCEDURE logheaza_eveniment_ldd (
+CREATE OR REPLACE PROCEDURE tracker_eveniment_ldd (
     nume_utilizator VARCHAR, 
     tip_ev          VARCHAR, 
     tip_obj         VARCHAR, 
@@ -854,37 +842,58 @@ BEGIN
     COMMIT;
 END;
 
-CREATE OR REPLACE TRIGGER trg_control_si_audit_f1
+CREATE OR REPLACE TRIGGER trg_ldd_audit_f1
 BEFORE CREATE OR ALTER OR DROP ON SCHEMA
 DECLARE
-    eveniment      VARCHAR(50);
-    nume_obiect    VARCHAR(100);
-    tip_obiect     VARCHAR(50);
-    utilizator     VARCHAR(50);
+    utilizator_curent     VARCHAR(50)  := SYS.LOGIN_USER;
+    eveniment_sistem      VARCHAR(50)  := SYSEVENT;
+    numele_obiectului     VARCHAR(100) := SYS.DICTIONARY_OBJ_NAME;
+    tipul_obiectului      VARCHAR(50)  := SYS.DICTIONARY_OBJ_TYPE;
 BEGIN
-    eveniment   := SYSEVENT;
-    nume_obiect := SYS.DICTIONARY_OBJ_NAME;
-    tip_obiect  := SYS.DICTIONARY_OBJ_TYPE;
-    utilizator  := SYS.LOGIN_USER;
+    IF (TO_CHAR(SYSDATE, 'D') = 1) OR (TO_NUMBER(TO_CHAR(SYSDATE, 'HH24')) NOT BETWEEN 8 AND 20) 
+    THEN 
+        tracker_eveniment_ldd(utilizator_curent, eveniment_sistem, tipul_obiectului, numele_obiectului, 'BLOCAT (ORA/ZI)'); 
+        RAISE_APPLICATION_ERROR(-20006, 'MENTENANTA: Utilizatorule ' || utilizator_curent || ', modificarile sunt permise doar Luni-Sambata (08:00 - 20:00)!'); 
+    END IF;
 
-    IF eveniment = 'CREATE' AND tip_obiect = 'TABLE' THEN
-        IF UPPER(nume_obiect) NOT LIKE '%_F1' THEN
-            logheaza_eveniment_ldd(utilizator, eveniment, tip_obiect, nume_obiect, 'BLOCAT (NUME)');
-            RAISE_APPLICATION_ERROR(-20007, 'EROARE: Numele tabelului trebuie sa se termine in _F1!');
+    IF eveniment_sistem = 'CREATE' AND tipul_obiectului = 'TABLE' THEN
+        IF UPPER(numele_obiectului) NOT LIKE '%_F1' THEN
+            tracker_eveniment_ldd(utilizator_curent, eveniment_sistem, tipul_obiectului, numele_obiectului, 'BLOCAT (NUME)');
+            RAISE_APPLICATION_ERROR(-20007, 'PROTOCOL: Numele tabelului creat de ' || utilizator_curent || ' trebuie sa se termine in _F1!');
         END IF;
     END IF;
 
-    IF eveniment = 'DROP' AND tip_obiect = 'TABLE' THEN
-        IF UPPER(nume_obiect) LIKE '%_F1' THEN
-            logheaza_eveniment_ldd(utilizator, eveniment, tip_obiect, nume_obiect, 'BLOCAT (DROP)');
-            RAISE_APPLICATION_ERROR(-20008, 'SECURITATE: Stergerea tabelelor oficiale F1 este interzisa!');
+    IF eveniment_sistem = 'DROP' AND tipul_obiectului = 'TABLE' THEN
+        IF UPPER(numele_obiectului) LIKE '%_F1' THEN
+            tracker_eveniment_ldd(utilizator_curent, eveniment_sistem, tipul_obiectului, numele_obiectului, 'BLOCAT (PROTECTIE)');
+            RAISE_APPLICATION_ERROR(-20008, 'SECURITATE: Utilizatorul ' || utilizator_curent || ' nu are permisiunea sa stearga ' || numele_obiectului || '!');
         END IF;
     END IF;
 
-    logheaza_eveniment_ldd(utilizator, eveniment, tip_obiect, nume_obiect, 'REUSIT');
+    tracker_eveniment_ldd(utilizator_curent, eveniment_sistem, tipul_obiectului, numele_obiectului, 'REUSIT');
 END;
 
+
+DROP TABLE TEST_F1;
+DROP TABLE TEST;
+
+CREATE TABLE TEST_F1 (id NUMBER);
+
+CREATE TABLE TEST (id NUMBER);
+
+SELECT * FROM AUDIT_LDD_F1 
+WHERE nume_obiect = 'TEST_F1';
+
+SELECT * FROM AUDIT_LDD_F1;
+
+ALTER TRIGGER trg_ldd_audit_f1 DISABLE;
+ALTER TRIGGER trg_ldd_audit_f1 ENABLE;
+
+DROP TRIGGER trg_ldd_audit_f1;
+
+
 -- 13
+
 
 CREATE OR REPLACE PACKAGE PKG_ANALIZA_PILOT IS
     TYPE info_cursa_rec IS RECORD (
@@ -995,7 +1004,3 @@ END PKG_ANALIZA_PILOT;
 BEGIN
     PKG_ANALIZA_PILOT.raport_pilot_sezon(1, 2025);
 END;
-
-
-
- 
