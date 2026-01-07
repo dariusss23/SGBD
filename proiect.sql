@@ -565,112 +565,96 @@ WHERE id_vehicul = 888;
 -- 9 
 
 
-CREATE OR REPLACE PROCEDURE p_venit_anual_pilot (
-    cod_pilot_intrare IN NUMBER,
-    an_ales           IN NUMBER
-)
-IS
-    suma_totala_calculata NUMBER(15,2);
-    numar_verificare      NUMBER;
+CREATE OR REPLACE PROCEDURE p_audit_contract_pilot (
+    id_pilot_intrare IN NUMBER,
+    an_sezon         IN NUMBER
+) IS
+    nume_complet            VARCHAR2(200);
+    cea_mai_buna_pozitie    NUMBER;
+    numar_podiumuri         NUMBER := 0;
+    salariu_negociat        NUMBER := 0;
 
-    nume_pilot            PILOT_F1.nume%TYPE;
-    prenume_pilot         PILOT_F1.prenume%TYPE;
-
-    PILOT_NEIDENTIFICAT   EXCEPTION;
-    FARA_CURSE_IN_AN      EXCEPTION;
-    FARA_CONTRACT_IN_AN   EXCEPTION;
+    PERFORMANTA_SLABA       EXCEPTION; 
+    SALARIU_NEJUSTIFICAT    EXCEPTION; 
 BEGIN
-    BEGIN
-        SELECT nume, prenume INTO nume_pilot, prenume_pilot
-        FROM PILOT_F1
-        WHERE id_pilot = cod_pilot_intrare;
-        
-        EXCEPTION
-            WHEN NO_DATA_FOUND THEN
-                RAISE PILOT_NEIDENTIFICAT;
-    END;
+    SELECT nume || ' ' || prenume INTO nume_complet 
+    FROM PILOT_F1 
+    WHERE id_pilot = id_pilot_intrare;
 
-    SELECT COUNT(*) INTO numar_verificare
-    FROM PILOT_CURSA_F1 PC
-    JOIN CURSA_F1 C ON PC.id_cursa = C.id_cursa
-    WHERE PC.id_pilot = cod_pilot_intrare AND EXTRACT(YEAR FROM c.data_cursa) = an_ales;
-
-    IF numar_verificare = 0 THEN
-        RAISE FARA_CURSE_IN_AN;
-    END IF;
-
-    SELECT COUNT(*) INTO numar_verificare
-    FROM ISTORIC_ECHIPA_PILOT_F1
-    WHERE id_pilot = cod_pilot_intrare AND an_ales BETWEEN EXTRACT(YEAR FROM data_inceput) AND EXTRACT(YEAR FROM data_final);
-
-    IF numar_verificare = 0 THEN
-        RAISE FARA_CONTRACT_IN_AN;
-    END IF;
-
-    SELECT MAX(h.salariu) + SUM(es.contributie_financiara) +
-        SUM(
-            CASE TB.categorie
-                WHEN 'Bronze'    THEN 100
-                WHEN 'Silver'    THEN 200
-                WHEN 'Gold'      THEN 300
-                WHEN 'Platinum'  THEN 500
-                WHEN 'VIP'       THEN 800
-                WHEN 'Exclusive' THEN 1200
-                ELSE 0
-            END
-        )
-    INTO suma_totala_calculata
+    SELECT MIN(PC.pozitie_finala), COUNT(CASE WHEN PC.pozitie_finala <= 3 THEN 1 END), MAX(H.salariu) INTO cea_mai_buna_pozitie, numar_podiumuri, salariu_negociat
     FROM PILOT_F1 P
     JOIN ISTORIC_ECHIPA_PILOT_F1 H ON P.id_pilot = H.id_pilot
-    JOIN (
-            SELECT DISTINCT id_echipa, id_sponsor, contributie_financiara
-            FROM ECHIPA_SPONSOR_F1
-            WHERE status_activ = 'YES'
-         ) ES ON H.id_echipa = ES.id_echipa
-    JOIN PILOT_CURSA_F1 PC ON P.id_pilot = PC.id_pilot
-    JOIN CURSA_F1 C ON PC.id_cursa = C.id_cursa
-    JOIN BILET_F1 B ON C.id_cursa = B.id_cursa
-    JOIN TIP_BILET_F1 TB ON B.id_tip_bilet = TB.id_tip_bilet
-    WHERE P.id_pilot = cod_pilot_intrare AND EXTRACT(YEAR FROM c.data_cursa) = an_ales AND an_ales BETWEEN EXTRACT(YEAR FROM h.data_inceput) AND EXTRACT(YEAR FROM h.data_final);
+    JOIN ECHIPA_F1 E               ON H.id_echipa = E.id_echipa
+    JOIN PILOT_CURSA_F1 PC         ON P.id_pilot = PC.id_pilot
+    JOIN CURSA_F1 C                ON PC.id_cursa = C.id_cursa
+    WHERE P.id_pilot = id_pilot_intrare AND EXTRACT(YEAR FROM C.data_cursa) = an_sezon AND TRUNC(C.data_cursa) BETWEEN TRUNC(H.data_inceput) AND TRUNC(H.data_final);
 
-    DBMS_OUTPUT.PUT_LINE('---------------------------------------------');
-    DBMS_OUTPUT.PUT_LINE('RAPORT FINANCIAR PILOT');
-    DBMS_OUTPUT.PUT_LINE('Pilot: ' || prenume_pilot || ' ' || nume_pilot);
-    DBMS_OUTPUT.PUT_LINE('An analizat: ' || an_ales);
-    DBMS_OUTPUT.PUT_LINE('Venit total: ' || suma_totala_calculata || ' EUR');
-    DBMS_OUTPUT.PUT_LINE('---------------------------------------------');
+    IF cea_mai_buna_pozitie IS NULL THEN
+        DBMS_OUTPUT.PUT_LINE('INFO: Pilotul ' || nume_complet || ' nu a participat la curse in anul ' || an_sezon);
+        RETURN;
+    END IF;
 
-    EXCEPTION
-        WHEN PILOT_NEIDENTIFICAT THEN
-            DBMS_OUTPUT.PUT_LINE('EROARE: Pilotul cu ID ' || cod_pilot_intrare || ' nu exista.');
+    IF cea_mai_buna_pozitie > 10 THEN
+        RAISE PERFORMANTA_SLABA;
+    END IF;
+
+    IF salariu_negociat > 5000000 AND numar_podiumuri = 0 THEN
+        RAISE SALARIU_NEJUSTIFICAT;
+    END IF;
+
+    DBMS_OUTPUT.PUT_LINE('====================================================');
+    DBMS_OUTPUT.PUT_LINE('AUDIT CONTRACTUAL REUSIT: ' || nume_complet);
+    DBMS_OUTPUT.PUT_LINE('CEA MAI BUNA CLASARE: ' || cea_mai_buna_pozitie);
+    DBMS_OUTPUT.PUT_LINE('NUMAR PODIUMURI: ' || numar_podiumuri);
+    DBMS_OUTPUT.PUT_LINE('STATUS: OBIECTIVE INDEPLINITE');
+    DBMS_OUTPUT.PUT_LINE('====================================================');
+
+EXCEPTION
+    WHEN PERFORMANTA_SLABA THEN
+        DBMS_OUTPUT.PUT_LINE('ALERTA: Pilotul ' || nume_complet || ' nu a atins TOP 10 (Cea mai buna: ' || cea_mai_buna_pozitie || ').');
     
-        WHEN FARA_CURSE_IN_AN THEN
-            DBMS_OUTPUT.PUT_LINE('EROARE: Pilotul ' || prenume_pilot || ' ' || nume_pilot ||' nu a participat la nicio cursa in anul ' || an_ales);
-    
-        WHEN FARA_CONTRACT_IN_AN THEN
-            DBMS_OUTPUT.PUT_LINE('ATENTIE: Pilotul ' || prenume_pilot || ' ' || nume_pilot ||' nu a avut contract activ in anul ' || an_ales ||'. Venitul provine exclusiv din participari.');
-    
-        WHEN OTHERS THEN
-            DBMS_OUTPUT.PUT_LINE('EROARE NEPREVAZUTA: ' || SQLERRM);
+    WHEN SALARIU_NEJUSTIFICAT THEN
+        DBMS_OUTPUT.PUT_LINE('ALERTA: Salariul de ' || salariu_negociat || ' EUR este nejustificat (0 Podiumuri).');
+
+    WHEN NO_DATA_FOUND THEN
+        DBMS_OUTPUT.PUT_LINE('EROARE: ID-ul pilotului nu a fost gasit.');
+        
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('EROARE NEASTEPTATA: ' || SQLERRM);
 END;
 
 
+--PERFORMANTA_SLABA
+INSERT INTO PILOT_F1 (id_pilot, nume, prenume, data_nastere, nationalitate) VALUES (99, 'Latifi', 'Nicholas', TO_DATE('1995-06-29', 'YYYY-MM-DD'), 'CAN');
+INSERT INTO ISTORIC_ECHIPA_PILOT_F1 (id_contract, id_echipa, id_pilot, data_inceput, data_final, salariu) VALUES (999, 10, 99, TO_DATE('2026-01-01', 'YYYY-MM-DD'), TO_DATE('2026-12-31', 'YYYY-MM-DD'), 1000000);
+INSERT INTO CURSA_F1 (id_cursa, id_circuit, tip_cursa, data_cursa, status) VALUES (99, 1, 'Grand Prix', TO_DATE('2026-03-15', 'YYYY-MM-DD'), 'Finished');
+INSERT INTO PILOT_CURSA_F1 (id_pilot, id_cursa, pozitie_start, pozitie_finala) VALUES (99, 99, 20, 15);
 
 BEGIN
-    DBMS_OUTPUT.PUT_LINE('--- Test 1: Caz valid ---');
-    p_venit_anual_pilot(1, 2025);
+    p_audit_contract_pilot(99, 2026);
 END;
 
+-- SALARIU_NEJUSTIFICAT
+INSERT INTO PILOT_F1 (id_pilot, nume, prenume, data_nastere, nationalitate) VALUES (88, 'Stroll', 'Lance', TO_DATE('1998-10-29', 'YYYY-MM-DD'), 'CAN');
+INSERT INTO ISTORIC_ECHIPA_PILOT_F1 (id_contract, id_echipa, id_pilot, data_inceput, data_final, salariu) VALUES (888, 5, 88, TO_DATE('2026-01-01', 'YYYY-MM-DD'), TO_DATE('2026-12-31', 'YYYY-MM-DD'), 8000000);
+INSERT INTO CURSA_F1 (id_cursa, id_circuit, tip_cursa, data_cursa, status) VALUES (88, 2, 'Grand Prix', TO_DATE('2026-04-20', 'YYYY-MM-DD'), 'Finished');
+INSERT INTO PILOT_CURSA_F1 (id_pilot, id_cursa, pozitie_start, pozitie_finala) VALUES (88, 88, 5, 5); 
 
 BEGIN
-    DBMS_OUTPUT.PUT_LINE(CHR(10) || '--- Test 2: Pilot inexistent ---');
-    p_venit_anual_pilot(999, 2025);
+    p_audit_contract_pilot(88, 2026);
 END;
 
+-- NO_DATA_FOUND
+BEGIN
+    p_audit_contract_pilot(7777, 2026);
+END;
+
+-- INFO
+INSERT INTO PILOT_F1 (id_pilot, nume, prenume, data_nastere, nationalitate) VALUES (55, 'Schumacher', 'Mick', TO_DATE('1999-03-22', 'YYYY-MM-DD'), 'GER');
+INSERT INTO ISTORIC_ECHIPA_PILOT_F1 (id_contract, id_echipa, id_pilot, data_inceput, data_final, salariu) VALUES (555, 3, 55, TO_DATE('2026-01-01', 'YYYY-MM-DD'), TO_DATE('2026-12-31', 'YYYY-MM-DD'), 2000000);
 
 BEGIN
-    DBMS_OUTPUT.PUT_LINE(CHR(10) || '--- Test 3: An fara curse ---');
-    p_venit_anual_pilot(3, 2024);
+    p_audit_contract_pilot(55, 2026);
 END;
 
 
