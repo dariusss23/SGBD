@@ -463,7 +463,6 @@ BEGIN
     p_raport_piloti_activi;
 END;
 
-
 -- 8
 
 -- Mecanicii fiecarei echipe au nevoie de o metoda rapida pentru a identifica modelul de masina care detine recordul de viteza din garajul lor. 
@@ -532,7 +531,7 @@ BEGIN
     DBMS_OUTPUT.PUT_LINE('Rezultat ID inexistent: ' || f_model_cel_mai_rapid_echipa(9999));
 END;
 
--- CAZUL 3: Echipa exista, dar nu are vehicule (Declansează NO_DATA_FOUND)
+-- CAZUL 3: Echipa exista, dar nu are vehicule (Declanseaza NO_DATA_FOUND)
 INSERT INTO ECHIPA_F1 (id_echipa, nume, an_infiintare, buget) VALUES (99, 'Echipa Test Fara Masini', 2025, 0);
 
 BEGIN
@@ -555,14 +554,20 @@ BEGIN
     DBMS_OUTPUT.PUT_LINE('Rezultat viteze identice: ' || f_model_cel_mai_rapid_echipa(2));
 END;
 
-DELETE FROM MODEL_VEHICUL_F1
-WHERE id_model = 888;
-
 DELETE FROM VEHICUL_F1
 WHERE id_vehicul = 888;
 
+DELETE FROM MODEL_VEHICUL_F1
+WHERE id_model = 888;
+
 
 -- 9 
+
+-- Managerii F1 au nevoie de o procedura care sa auditeze contractele pilotilor pe baza unui ID si an. 
+-- Calculati performanta si ridicati exceptii daca pilotul nu are Top 10 sau are salariu > 5M fara podiumuri. 
+-- Daca pilotul nu a concurat in acel an, afisati un mesaj informativ si opriti procesul de verificare. 
+-- Pentru date invalide (ID gresit) sau obiective atinse, afisati mesaje de eroare, respectiv un raport. 
+-- Validati astfel daca investitia in pilot este justificata de rezultatele obtinute in sezonul ales.
 
 
 CREATE OR REPLACE PROCEDURE p_audit_contract_pilot (
@@ -697,7 +702,7 @@ END;
 
 
 -- REZULTAT: Eroare ORA-20001: "BLOCAJ"
-INSERT INTO CURSA_F1 (id_cursa, id_circuit, tip_cursa, data_cursa, status) VALUES (99, 1, 'Grand Prix', SYSDATE, 'In Progress');
+INSERT INTO CURSA_F1 (id_cursa, id_circuit, tip_cursa, data_cursa, status) VALUES (335, 1, 'Grand Prix', SYSDATE, 'In Progress');
 
 UPDATE VEHICUL_F1 
 SET greutate = 850 
@@ -707,7 +712,7 @@ WHERE id_vehicul = 1;
 -- REZULTAT: Eroare ORA-20002: "RESTRICTIE"
 UPDATE CURSA_F1 
 SET status = 'Planned' 
-WHERE id_cursa = 99;
+WHERE id_cursa = 335;
 
 DELETE FROM VEHICUL_F1 
 WHERE id_vehicul = 1;
@@ -721,8 +726,8 @@ UPDATE VEHICUL_F1
 SET pneuri = 'Pirelli' 
 WHERE id_vehicul = 1;
 
-DELETE FROM CURSA_F1
-WHERE id_cursa = 99;
+
+DELETE FROM CURSA_F1 WHERE id_cursa = 335;
 
 
 -- 11
